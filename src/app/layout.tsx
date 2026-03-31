@@ -22,8 +22,16 @@ const merriweather = Merriweather({
 });
 
 const metadata: Metadata = {
-  title: 'King Nitram & the Merry Universe',
-  description: 'Portfolio site for art and music',
+  title: {
+    default: 'King Nitram & the Merry Universe',
+    template: '%s — King Nitram',
+  },
+  description: 'Portfolio site for art and music by King Nitram',
+  metadataBase: new URL('https://kingnitram.com/site'),
+  openGraph: {
+    siteName: 'King Nitram & the Merry Universe',
+    type: 'website',
+  },
 };
 
 export { metadata };

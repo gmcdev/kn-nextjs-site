@@ -19,6 +19,10 @@ export async function generateStaticParams() {
   });
 }
 
+const stripHtml = (html: string): string => {
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+};
+
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { postSlug } = await params;
   const { store } = await getSiteData();
@@ -28,12 +32,20 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
     return { title: 'King Nitram' };
   }
 
+  const description = post.content
+    ? stripHtml(post.content).slice(0, 160)
+    : post.postMeta.contentType;
+
   return {
-    description: post.postMeta.contentType,
-    openGraph: post.cdnFeaturedImage
-      ? { images: [{ url: post.cdnFeaturedImage.sourceUrl }] }
-      : undefined,
-    title: `${post.title} — King Nitram`,
+    description,
+    openGraph: {
+      images: post.cdnFeaturedImage
+        ? [{ alt: post.cdnFeaturedImage.altText, url: post.cdnFeaturedImage.sourceUrl }]
+        : undefined,
+      title: post.title,
+      type: 'article',
+    },
+    title: post.title,
   };
 }
 

@@ -20,7 +20,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const category = Object.values(store.categoryMap).find((c) => c.slug === categorySlug);
 
   return {
-    title: category ? `${category.name} — King Nitram` : 'King Nitram',
+    description: category ? `${category.name} — art and music by King Nitram` : undefined,
+    openGraph: {
+      title: category?.name,
+    },
+    title: category?.name ?? 'King Nitram',
   };
 }
 
