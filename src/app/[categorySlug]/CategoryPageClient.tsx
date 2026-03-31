@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
+import InteractiveFeatures from '@/components/InteractiveFeatures';
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import Site from '@/components/Site';
@@ -14,6 +15,7 @@ type CategoryPageClientProps = Readonly<{
 
 const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
   const { siteScopes, store } = useSiteData();
+  const pageRef = useRef<HTMLDivElement>(null);
 
   const category = useMemo(
     () => Object.values(store.categoryMap).find((c) => c.slug === categorySlug),
@@ -34,7 +36,8 @@ const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
 
   return (
     <MediaListener>
-      <PageLayout>
+      <InteractiveFeatures pageRef={pageRef} scope={scope} store={store} />
+      <PageLayout pageRef={pageRef}>
         <Site categorySlug={categorySlug} scope={scope} />
       </PageLayout>
     </MediaListener>

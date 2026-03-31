@@ -61,7 +61,7 @@ const Tag = ({ post, scope, tag }: TagProps) => {
   const contentType = tagPost.postMeta.contentType;
 
   return (
-    <div className="tag">
+    <div className="tag" data-tag-slug={tag.slug}>
       <div className="tag__header">
         <div className="tag__header-breadcrumbs">
           <Breadcrumbs store={store} post={tagPost} />

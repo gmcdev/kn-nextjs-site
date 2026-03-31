@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
+import findCategoryByPost from '@/components/Breadcrumbs/functions/findCategoryByPost';
+import InteractiveFeatures from '@/components/InteractiveFeatures';
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import Site from '@/components/Site';
 import { useSiteData } from '@/components/SiteDataProvider';
 import { getRequestedScopes } from '@/utils/scope-manager';
-
-import findCategoryByPost from '@/components/Breadcrumbs/functions/findCategoryByPost';
 
 type PostPageClientProps = Readonly<{
   categorySlug: string;
@@ -17,6 +17,7 @@ type PostPageClientProps = Readonly<{
 
 const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
   const { siteScopes, store } = useSiteData();
+  const pageRef = useRef<HTMLDivElement>(null);
 
   const post = useMemo(
     () => Object.values(store.postMap).find((p) => p.slug === postSlug),
@@ -46,7 +47,8 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
 
   return (
     <MediaListener>
-      <PageLayout>
+      <InteractiveFeatures pageRef={pageRef} scope={scope} store={store} />
+      <PageLayout pageRef={pageRef}>
         <Site categorySlug={categorySlug} post={post} scope={scope} />
       </PageLayout>
     </MediaListener>

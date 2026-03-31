@@ -1,18 +1,17 @@
 'use client';
 
-import type { PropsWithChildren } from 'react';
-import { useRef } from 'react';
+import type { PropsWithChildren, RefObject } from 'react';
 
 import Header from '../Header';
 import SiteMap from '../SiteMap';
 
 import './style.scss';
 
-type PageLayoutProps = Readonly<PropsWithChildren>;
+type PageLayoutProps = Readonly<PropsWithChildren<{
+  pageRef: RefObject<HTMLDivElement | null>;
+}>>;
 
-const PageLayout = ({ children }: PageLayoutProps) => {
-  const pageRef = useRef<HTMLDivElement>(null);
-
+const PageLayout = ({ children, pageRef }: PageLayoutProps) => {
   return (
     <div className="page-layout">
       <Header pageRef={pageRef} />
