@@ -1,0 +1,271 @@
+.header {
+  background-color: black;
+  border-bottom: 2px solid var(--color-header-border);
+  font-family: var(--font-heading);
+  font-weight: var(--fontWeight-bold);
+  // height: 145px;
+  position: sticky;
+  width: 100%;
+  z-index: 100;
+
+  /**
+   * desktop
+   *
+   */
+  @media screen and (min-width: 968px) {
+    &__hideBigHeader {
+      animation: hideBigHeader 0.3s ease-in-out forwards;
+    }
+
+    @keyframes hideBigHeader {
+      from {
+        height: 145px;
+      }
+      to {
+        height: 32px;
+      }
+    }
+
+    &__showBigHeader {
+      animation: showBigHeader 0.3s ease-in-out forwards;
+    }
+
+    @keyframes showBigHeader {
+      from {
+        height: 32px;
+      }
+      to {
+        height: 145px;
+      }
+    }
+
+    &__bg {
+      background-image: url(/site/images/kn_logo_bg.png);
+      background-repeat: repeat-x;
+      bottom: 0px;
+      height: 145px;
+      position: absolute;
+      width: 100%;
+    }
+
+    &__logo {
+      background-color: transparent;
+      bottom: 0px;
+      position: absolute;
+      left: 10px;
+
+      &__hideBigLogo {
+        animation: hideBigLogo 0.3s ease-in-out forwards;
+      }
+
+      @keyframes hideBigLogo {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+      &__showBigLogo {
+        animation: showBigLogo 0.3s ease-in-out forwards;
+      }
+
+      @keyframes showBigLogo {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    }
+
+    &__logo-scroll {
+      bottom: 0px;
+      left: 10px;
+      opacity: 0;
+      position: absolute;
+
+      &__hideScrollLogo {
+        animation: hideScrollLogo 0.3s ease-in-out forwards;
+      }
+      @keyframes hideScrollLogo {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      &__showScrollLogo {
+        animation: showScrollLogo 0.3s ease-in-out forwards;
+      }
+      @keyframes showScrollLogo {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    }
+
+    &__logo-mobile {
+      display: none;
+    }
+
+    &__top-nav {
+      bottom: 0px;
+      display: flex;
+      justify-content: right;
+      position: absolute;
+      width: 100%;
+
+      &__menu {
+        color: var(--color-menu-text);
+        display: flex;
+        justify-content: space-between;
+        list-style-type: none;
+        margin: 0;
+        max-width: 600px;
+        min-width: 38%;
+        padding: 4px 10px 0;
+        text-indent: 0;
+
+        & li {
+          padding: 0 20px;
+        }
+
+        & a {
+          color: inherit;
+          text-decoration: inherit;
+        }
+
+        & a:hover {
+          color: var(--color-menu-selected-text);
+        }
+
+        &--tab {
+          padding: 0 12px;
+        }
+
+        &--tab-selected {
+          background-color: var(--color-menu-selected-bg);
+          color: var(--color-menu-selected-text);
+          padding: 0 20px;
+          border-radius: 15px 15px 0 0;
+          cursor: default;
+        }
+      }
+
+      &__view-control {
+        border-left: 2px solid var(--color-menu-selected-bg);
+        display: flex;
+        height: 28px;
+
+        & button {
+          background: black;
+          border: none;
+          color: var(--color-site-map-text);
+          cursor: pointer;
+          padding: 7px 15px;
+
+          &:hover {
+            background-color: var(--color-audio-bg-selected);
+          }
+        }
+
+        &--active[class] {
+          color: var(--color-menu-selected-text);
+        }
+      }
+    }
+  }
+
+  /**
+   * mobile
+   *
+   */
+  @media screen and (max-width: 968px) {
+    &__bg {
+      display: none;
+    }
+
+    &__logo {
+      display: none;
+    }
+
+    &__logo-scroll {
+      display: none;
+    }
+
+    &__logo-mobile {
+      height: 75px;
+      display: flex;
+      justify-content: center;
+    }
+
+    &__top-nav {
+      bottom: 0px;
+      display: flex;
+      justify-content: space-between;
+      position: absolute;
+      width: 100%;
+
+      &__menu {
+        color: var(--color-menu-text);
+        display: flex;
+        justify-content: space-between;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        text-indent: 0;
+        width: 100%;
+
+        @media screen and (min-width: 380px) {
+          font-size: var(--fontSize-1);
+        }
+
+        @media screen and (max-width: 379px) {
+          font-size: var(--fontSize-00);
+        }
+
+        & li {
+          margin: 0;
+          padding: 0 10px;
+        }
+
+        & a {
+          color: inherit;
+          text-decoration: inherit;
+        }
+
+        & a:hover {
+          color: var(--color-menu-selected-text);
+        }
+
+        &--inner {
+          display: flex;
+          justify-content: space-between;
+        }
+
+        &--tab {
+          padding: 0 12px;
+        }
+
+        &--tab-selected {
+          background-color: var(--color-menu-selected-bg);
+          color: var(--color-menu-selected-text);
+          padding: 0 20px;
+          border-radius: 10px 10px 0 0;
+          cursor: default;
+        }
+      }
+
+      &__view-control {
+        display: none;
+      }
+    }
+  }
+}

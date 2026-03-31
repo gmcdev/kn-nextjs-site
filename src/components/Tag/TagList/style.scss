@@ -1,0 +1,122 @@
+.tag-list {
+  &__nav {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: var(--spacing-3) 0 0;
+    transform-origin: 0px 0px;
+
+    &-inner {
+      display: flex;
+      flex-direction: row;
+    }
+
+    & svg {
+      color: var(--color-header-border);
+      filter: drop-shadow(2px 2px 2px black);
+    }
+
+    &--left {
+      background: none;
+      border: none;
+      padding: 0;
+      margin-left: var(--spacing-1);
+      cursor: pointer;
+    }
+
+    &--right {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    &--inactive {
+      opacity: 0.25;
+      cursor: default;
+    }
+
+    &--posts {
+      display: flex;
+      gap: var(--spacing-2);
+      margin: 0 var(--spacing-4);
+    }
+
+    &--post {
+      background: none;
+      border: none;
+      padding: 0;
+      opacity: 0.65;
+      cursor: pointer;
+
+      &-active {
+        opacity: 1;
+        cursor: default;
+        pointer-events: none;
+      }
+    }
+  }
+  @media screen and (max-width: 968px) {
+    &__nav {
+      transform: scale(0.75);
+    }
+  }
+
+  &__default {
+    &-posts {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      // Hide scrollbar but keep scrolling functionality
+      scrollbar-width: none; // Firefox
+      -ms-overflow-style: none; // IE and Edge
+
+      &::-webkit-scrollbar {
+        display: none; // Chrome, Safari, Opera
+      }
+    }
+
+    &-post {
+      flex: 0 0 auto;
+      padding: 0 var(--spacing-1);
+      scroll-snap-align: center;
+      width: 100%;
+
+      & p {
+        max-width: 900px;
+        margin: 12px 0;
+        line-height: var(--lineHeight-normal);
+      }
+
+      & blockquote {
+        color: var(--color-post-quote);
+        margin: 15px;
+
+        & p {
+          margin: unset;
+        }
+      }
+    }
+  }
+
+  &__audio {
+    &-posts:last-child {
+      padding: 0 0 var(--spacing-24) 0;
+    }
+
+    &-post {
+      width: 100%;
+      flex: 0 0 auto;
+      padding: 10px 0;
+    }
+  }
+
+  @media screen and (max-width: 968px) {
+    &__audio {
+      &-post {
+        padding: 10px 2px;
+      }
+    }
+  }
+}

@@ -2,6 +2,8 @@ import { getSiteData } from '@/lib/data';
 import { getLeafCategory } from '@/lib/store';
 import type { Metadata } from 'next';
 
+import PostPageClient from './PostPageClient';
+
 type PostPageProps = Readonly<{
   params: Promise<{ categorySlug: string; postSlug: string }>;
 }>;
@@ -37,22 +39,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 const PostPage = async ({ params }: PostPageProps) => {
   const { categorySlug, postSlug } = await params;
-  const { siteScopes, store } = await getSiteData();
-  const post = Object.values(store.postMap).find((p) => p.slug === postSlug);
-
-  if (!post) {
-    return <div>Post not found</div>;
-  }
-
-  const leafCategory = getLeafCategory(store, post);
-
-  return (
-    <div>
-      <h1>{post.title}</h1>
-      <p>Category: {categorySlug} | Leaf: {leafCategory.slug}</p>
-      <p>Scopes: {siteScopes.length}</p>
-    </div>
-  );
+  return <PostPageClient categorySlug={categorySlug} postSlug={postSlug} />;
 };
 
 export default PostPage;

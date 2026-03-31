@@ -1,0 +1,87 @@
+'use client';
+
+import type { PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
+import useSettingsStore from '@/stores/useSettingsStore';
+
+import Breadcrumbs from '../Breadcrumbs';
+import TagAhref from '../Breadcrumbs/TagAhref';
+import Post from '../Post';
+import { useSiteData } from '../SiteDataProvider';
+import VirtualizedItem from '../VirtualizedItem';
+
+import TagGrid from './TagGrid';
+import TagList from './TagList';
+import TagNavigation from './TagNavigation';
+
+import './style.scss';
+
+type TagProps = Readonly<{
+  post?: PostWithRelationships;
+  scope?: SiteData;
+  tag?: TagWithRelationships;
+}>;
+
+const Tag = ({ post, scope, tag }: TagProps) => {
+  const { store } = useSiteData();
+  const { displayMode } = useSettingsStore();
+
+  const isMusicCategory = scope?.category.slug === 'music';
+
+  // single-post mode
+  if (post) {
+    const postContentType = post.postMeta.contentType;
+    const postTag = store.tagMap[post.tagIds[0]];
+    return (
+      <div className="tag" key={postTag?.id}>
+        <div className="tag__header">
+          <div className="tag__header-breadcrumbs">
+            <Breadcrumbs store={store} post={post} />
+          </div>
+          <div className="tag__header-name-inactive">{postTag?.name}</div>
+        </div>
+        <div className={`tag__${postContentType}-posts`}>
+          <div className={`tag__${postContentType}-post`} key={post.id}>
+            <Post post={post} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // tag mode
+  if (!scope || !tag) {
+    return null;
+  }
+
+  const tagPost = store.postMap[tag.postIds[0]];
+  if (!tagPost) {
+    return null;
+  }
+
+  const contentType = tagPost.postMeta.contentType;
+
+  return (
+    <div className="tag">
+      <div className="tag__header">
+        <div className="tag__header-breadcrumbs">
+          <Breadcrumbs store={store} post={tagPost} />
+        </div>
+        <TagAhref category={scope.category} tag={tag}>
+          <div className="tag__header-name">{tag.name}</div>
+        </TagAhref>
+        {displayMode === 'list' && !isMusicCategory ? (
+          <TagNavigation contentType={contentType} tag={tag} />
+        ) : null}
+      </div>
+      <VirtualizedItem initialHeight={500}>
+        {displayMode === 'grid' && !isMusicCategory ? (
+          <TagGrid contentType={contentType} tag={tag} />
+        ) : (
+          <TagList contentType={contentType} tag={tag} />
+        )}
+      </VirtualizedItem>
+    </div>
+  );
+};
+
+export default Tag;

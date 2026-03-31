@@ -1,0 +1,50 @@
+html,
+body {
+  background-color: black;
+}
+
+.page-layout {
+  background-color: black;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+
+  &__main {
+    display: grid;
+    grid-template-columns: minmax(0, min(15%, 200px)) 1fr;
+    overflow: hidden;
+
+    @media screen and (max-width: 968px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__scroll-shadow-bottom {
+    position: fixed;
+    bottom: 0px;
+    height: 50px;
+    width: 100%;
+    background: linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.2) 25%,
+      rgba(0, 0, 0, 0) 100%
+    );
+  }
+
+  &__page {
+    overflow-x: hidden;
+  }
+
+  &__content {
+    padding: 0 var(--spacing-1);
+  }
+
+  & footer {
+    background-color: black;
+    color: var(--color-menu-text);
+    min-height: 200px;
+    padding: 50px;
+    text-align: center;
+  }
+}

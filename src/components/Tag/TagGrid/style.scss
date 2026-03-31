@@ -1,0 +1,42 @@
+.tag-grid {
+  padding: 5px 0 50px;
+
+  &__default {
+    &-posts {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    &-post {
+      flex: 1 1 auto;
+      height: 250px;
+      margin: 3px;
+
+      & img {
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+      }
+    }
+  }
+
+  &__audio {
+    &-posts:last-child {
+      padding: 0 0 var(--spacing-24) 0;
+    }
+
+    &-post {
+      width: 100%;
+      flex: 0 0 auto;
+      padding: 10px;
+    }
+  }
+
+  @media screen and (max-width: 968px) {
+    &__audio {
+      &-post {
+        padding: 10px 2px;
+      }
+    }
+  }
+}
