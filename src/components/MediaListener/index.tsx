@@ -4,7 +4,7 @@ import { type Dispatch, type SetStateAction, createContext, useContext, useLayou
 import type { PropsWithChildren } from 'react';
 
 const QUERY_LARGE = '1024px';
-const QUERY_MEDIUM = '968px';
+const QUERY_MEDIUM = '980px';
 const QUERY_SMALL = '780px';
 
 type MediaSize = 'small' | 'medium' | 'large';

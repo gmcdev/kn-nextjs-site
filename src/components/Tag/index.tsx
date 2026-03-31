@@ -1,7 +1,6 @@
 'use client';
 
 import type { PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
-import useSettingsStore from '@/stores/useSettingsStore';
 
 import Breadcrumbs from '../Breadcrumbs';
 import TagAhref from '../Breadcrumbs/TagAhref';
@@ -9,11 +8,15 @@ import Post from '../Post';
 import { useSiteData } from '../SiteDataProvider';
 import VirtualizedItem from '../VirtualizedItem';
 
+import { useMediaSize } from '../MediaListener';
+
 import TagGrid from './TagGrid';
 import TagList from './TagList';
 import TagNavigation from './TagNavigation';
 
 import './style.scss';
+
+type DisplayMode = 'grid' | 'list';
 
 type TagProps = Readonly<{
   post?: PostWithRelationships;
@@ -23,9 +26,12 @@ type TagProps = Readonly<{
 
 const Tag = ({ post, scope, tag }: TagProps) => {
   const { store } = useSiteData();
-  const { displayMode } = useSettingsStore();
+  const mediaSize = useMediaSize();
 
   const isMusicCategory = scope?.category.slug === 'music';
+  const displayMode: DisplayMode = isMusicCategory
+    ? 'list'
+    : mediaSize === 'large' ? 'grid' : 'list';
 
   // single-post mode
   if (post) {
@@ -69,12 +75,12 @@ const Tag = ({ post, scope, tag }: TagProps) => {
         <TagAhref category={scope.category} tag={tag}>
           <div className="tag__header-name">{tag.name}</div>
         </TagAhref>
-        {displayMode === 'list' && !isMusicCategory ? (
+        {displayMode === 'list' ? (
           <TagNavigation contentType={contentType} tag={tag} />
         ) : null}
       </div>
       <VirtualizedItem initialHeight={500}>
-        {displayMode === 'grid' && !isMusicCategory ? (
+        {displayMode === 'grid' ? (
           <TagGrid contentType={contentType} tag={tag} />
         ) : (
           <TagList contentType={contentType} tag={tag} />

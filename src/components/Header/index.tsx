@@ -5,7 +5,6 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 import { orderTopCategories } from '@/lib/store';
 import useNavigationStore from '@/stores/useNavigationStore';
-import useSettingsStore from '@/stores/useSettingsStore';
 
 import { useSiteData } from '../SiteDataProvider';
 
@@ -18,7 +17,6 @@ type HeaderProps = Readonly<{
 const Header = ({ pageRef }: HeaderProps) => {
   const { store } = useSiteData();
   const currentPost = useNavigationStore((state) => state.currentPost);
-  const { displayMode, setDisplayMode } = useSettingsStore();
 
   const categories = Object.values(store.categoryMap).filter((c) => !c.parentId);
 
@@ -103,22 +101,6 @@ const Header = ({ pageRef }: HeaderProps) => {
             ) : null,
           )}
         </menu>
-        <div className="header__top-nav__view-control">
-          <button
-            className={displayMode === 'grid' ? 'header__top-nav__view-control--active' : ''}
-            onClick={() => setDisplayMode('grid')}
-            aria-label="Grid view"
-          >
-            ▦
-          </button>
-          <button
-            className={displayMode === 'list' ? 'header__top-nav__view-control--active' : ''}
-            onClick={() => setDisplayMode('list')}
-            aria-label="List view"
-          >
-            ☰
-          </button>
-        </div>
       </div>
     </header>
   );
