@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import { Montserrat, Merriweather } from 'next/font/google';
+
+import SiteDataProvider from '@/components/SiteDataProvider';
+import { getSiteData } from '@/lib/data';
 import '@/css/normalize.css';
 import '@/css/style.css';
 
@@ -27,10 +30,16 @@ type RootLayoutProps = Readonly<{
   children: React.ReactNode;
 }>;
 
-const RootLayout = ({ children }: RootLayoutProps) => {
+const RootLayout = async ({ children }: RootLayoutProps) => {
+  const { siteScopes, store } = await getSiteData();
+
   return (
     <html lang="en" className={`${montserrat.variable} ${merriweather.variable}`}>
-      <body>{children}</body>
+      <body>
+        <SiteDataProvider siteScopes={siteScopes} store={store}>
+          {children}
+        </SiteDataProvider>
+      </body>
     </html>
   );
 };
