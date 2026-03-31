@@ -16,17 +16,18 @@ type HeaderProps = Readonly<{
 
 const Header = ({ pageRef }: HeaderProps) => {
   const { store } = useSiteData();
-  const currentPost = useNavigationStore((state) => state.currentPost);
+  const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
 
   const categories = Object.values(store.categoryMap).filter((c) => !c.parentId);
 
   const orderedCategories = useMemo(() => {
-    const postCategoryId = currentPost?.categoryIds.find(
-      (categoryId: string) => !store.categoryMap[categoryId]?.parentId
-    );
-    const postCategory = postCategoryId ? store.categoryMap[postCategoryId] : undefined;
-    return orderTopCategories(categories, postCategory);
-  }, [categories, currentPost, store.categoryMap]);
+    // Walk up from the current category to find the root
+    let rootCategory = currentCategoryId ? store.categoryMap[currentCategoryId] : undefined;
+    while (rootCategory?.parentId && store.categoryMap[rootCategory.parentId]) {
+      rootCategory = store.categoryMap[rootCategory.parentId];
+    }
+    return orderTopCategories(categories, rootCategory);
+  }, [categories, currentCategoryId, store.categoryMap]);
 
   const hasScrolled = useRef(false);
   const [animClasses, setAnimClasses] = useState({
@@ -37,20 +38,23 @@ const Header = ({ pageRef }: HeaderProps) => {
 
   useEffect(() => {
     const pageRefElement = pageRef.current;
+    const isCollapsedRef = { current: false };
     const handleScroll = () => {
       const scrollY = pageRefElement?.scrollTop ?? 0;
-      if (scrollY > 140) {
+      if (!isCollapsedRef.current && scrollY > 140) {
+        isCollapsedRef.current = true;
         setAnimClasses({
           bigLogo: 'header__logo__hideBigLogo',
           header: 'header__hideBigHeader',
-          scrollLogo: 'header__logo-scroll__showScrollLogo'
+          scrollLogo: 'header__logo-scroll__showScrollLogo',
         });
         hasScrolled.current = true;
-      } else if (hasScrolled.current) {
+      } else if (isCollapsedRef.current && scrollY < 30) {
+        isCollapsedRef.current = false;
         setAnimClasses({
           bigLogo: 'header__logo__showBigLogo',
           header: 'header__showBigHeader',
-          scrollLogo: 'header__logo-scroll__hideScrollLogo'
+          scrollLogo: 'header__logo-scroll__hideScrollLogo',
         });
       }
     };

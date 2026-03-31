@@ -2,11 +2,12 @@
 
 import { useMemo } from 'react';
 
-import { getFirstPost, getLastPost } from '@/utils/scope-manager';
-import { getPostNeighbors, getRequestedScopes } from '@/utils/scope-manager';
+import type { SiteData, TagWithRelationships } from '@/lib/types';
+import useNavigationStore from '@/stores/useNavigationStore';
+import { getRequestedScopes } from '@/utils/scope-manager';
 
 import CategoryAhref from '../Breadcrumbs/CategoryAhref';
-import PostAhref from '../Breadcrumbs/PostAhref';
+import TagAhref from '../Breadcrumbs/TagAhref';
 import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
@@ -15,8 +16,39 @@ type FooterNavigationProps = Readonly<{
   categorySlug: string;
 }>;
 
+type TagNeighbors = {
+  next: TagWithRelationships | null;
+  previous: TagWithRelationships | null;
+};
+
+const getTagNeighbors = (scope: SiteData, tagId: string): TagNeighbors => {
+  // Collect all tags across the scope and its children
+  const allTags: { category: SiteData; tag: TagWithRelationships }[] = [];
+  const collectTags = (currentScope: SiteData) => {
+    if (currentScope.children.length > 0) {
+      currentScope.children.forEach((child) => collectTags(child));
+    }
+    currentScope.tags.forEach((tag) => {
+      allTags.push({ category: currentScope, tag });
+    });
+  };
+  collectTags(scope);
+
+  const currentIndex = allTags.findIndex((entry) => entry.tag.id === tagId);
+  if (currentIndex === -1) {
+    return { next: null, previous: null };
+  }
+
+  return {
+    next: currentIndex < allTags.length - 1 ? allTags[currentIndex + 1].tag : null,
+    previous: currentIndex > 0 ? allTags[currentIndex - 1].tag : null,
+  };
+};
+
 const FooterNavigation = ({ categorySlug }: FooterNavigationProps) => {
   const { siteScopes, store } = useSiteData();
+  const currentTagId = useNavigationStore((state) => state.currentTagId);
+  const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
 
   const scopeData = useMemo(() => {
     const category = Object.values(store.categoryMap).find((c) => c.slug === categorySlug);
@@ -27,26 +59,28 @@ const FooterNavigation = ({ categorySlug }: FooterNavigationProps) => {
     if (!resultScopes?.highestScope) {
       return null;
     }
-    const firstPost = getFirstPost(store, resultScopes.scope);
-    const firstPostRelatives = firstPost
-      ? getPostNeighbors(store, resultScopes.highestScope, firstPost.id)
-      : {};
-    const lastPost = getLastPost(store, resultScopes.scope);
-    const lastPostRelatives = lastPost
-      ? getPostNeighbors(store, resultScopes.highestScope, lastPost.id)
-      : {};
-    return {
-      ...resultScopes,
-      firstPostRelatives,
-      lastPostRelatives,
-    };
+    return resultScopes;
   }, [categorySlug, siteScopes, store]);
+
+  const tagNeighbors = useMemo(() => {
+    if (!scopeData?.highestScope || !currentTagId) {
+      return { next: null, previous: null };
+    }
+    return getTagNeighbors(scopeData.highestScope, currentTagId);
+  }, [currentTagId, scopeData]);
+
+  const tagCategory = useMemo(() => {
+    if (!currentCategoryId) {
+      return null;
+    }
+    return store.categoryMap[currentCategoryId] ?? null;
+  }, [currentCategoryId, store.categoryMap]);
 
   if (!scopeData) {
     return null;
   }
 
-  const { firstPostRelatives, highestScope, lastPostRelatives, newerScope, olderScope } = scopeData;
+  const { highestScope, newerScope, olderScope } = scopeData;
 
   return (
     <div className="footer-navigation__newer-older">
@@ -68,22 +102,22 @@ const FooterNavigation = ({ categorySlug }: FooterNavigationProps) => {
               </div>
             </CategoryAhref>
           ) : null}
-          {lastPostRelatives?.older ? (
-            <PostAhref store={store} post={lastPostRelatives.older}>
+          {tagNeighbors.previous && tagCategory ? (
+            <TagAhref category={tagCategory} tag={tagNeighbors.previous}>
               <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-post footer-navigation__round-lower-left">
-                {lastPostRelatives.older.title ?? 'Previous Post'}
+                {tagNeighbors.previous.name}
               </div>
-            </PostAhref>
+            </TagAhref>
           ) : null}
         </div>
         <div className="footer-navigation__newer-older--half">
           <div className="footer-navigation__relatives">
-            {firstPostRelatives?.newer ? (
-              <PostAhref store={store} post={firstPostRelatives.newer}>
+            {tagNeighbors.next && tagCategory ? (
+              <TagAhref category={tagCategory} tag={tagNeighbors.next}>
                 <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-post footer-navigation__round-lower-right">
-                  {firstPostRelatives.newer.title ?? 'Next Post'}
+                  {tagNeighbors.next.name}
                 </div>
-              </PostAhref>
+              </TagAhref>
             ) : null}
           </div>
           {newerScope ? (

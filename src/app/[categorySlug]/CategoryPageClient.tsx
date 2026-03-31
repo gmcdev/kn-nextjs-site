@@ -7,8 +7,16 @@ import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import Site from '@/components/Site';
 import { useSiteData } from '@/components/SiteDataProvider';
+import type { SiteData } from '@/lib/types';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { getRequestedScopes } from '@/utils/scope-manager';
+
+const getFirstLeaf = (scope: SiteData): SiteData => {
+  if (scope.children.length > 0) {
+    return getFirstLeaf(scope.children[0]);
+  }
+  return scope;
+};
 
 type CategoryPageClientProps = Readonly<{
   categorySlug: string;
@@ -35,13 +43,14 @@ const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
 
   useEffect(() => {
-    if (category) {
-      setCurrentCategoryId(category.id);
+    if (scope) {
+      const firstLeaf = getFirstLeaf(scope);
+      setCurrentCategoryId(firstLeaf.category.id);
+      if (firstLeaf.tags[0]) {
+        setCurrentTagId(firstLeaf.tags[0].id);
+      }
     }
-    if (scope?.tags[0]) {
-      setCurrentTagId(scope.tags[0].id);
-    }
-  }, [category, scope, setCurrentCategoryId, setCurrentTagId]);
+  }, [scope, setCurrentCategoryId, setCurrentTagId]);
 
   if (!category || !scope) {
     return <div>Category not found</div>;
@@ -49,7 +58,7 @@ const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
 
   return (
     <MediaListener>
-      <InteractiveFeatures pageRef={pageRef} scope={scope} store={store} />
+      <InteractiveFeatures pageRef={pageRef} store={store} />
       <PageLayout pageRef={pageRef}>
         <Site categorySlug={categorySlug} scope={scope} />
       </PageLayout>

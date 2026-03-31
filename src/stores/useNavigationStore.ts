@@ -12,6 +12,7 @@ type NavigationState = {
 
 type NavigationActions = {
   activateScroll: () => void;
+  resetScrollActivated: () => void;
   setCurrentCategoryId: (categoryId: string | null) => void;
   setCurrentPost: (post: PostWithRelationships | null) => void;
   setCurrentTagId: (tagId: string | null) => void;
@@ -27,6 +28,10 @@ const useNavigationStore = create<NavigationState & NavigationActions>((set, get
 
   activateScroll: () => {
     set({ scrollActivated: true });
+  },
+
+  resetScrollActivated: () => {
+    set({ scrollActivated: false });
   },
 
   setCurrentCategoryId: (categoryId) => {

@@ -1,20 +1,27 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import type { RefObject } from 'react';
+import { useEffect } from 'react';
 
-import useDeepLink from '@/hooks/useDeepLink';
-import useUrlOnScroll from '@/hooks/useUrlOnScroll';
-import type { SiteData, Store } from '@/lib/types';
+import useTagTracking from '@/hooks/useTagTracking';
+import type { Store } from '@/lib/types';
+import useNavigationStore from '@/stores/useNavigationStore';
 
 type InteractiveFeaturesProps = Readonly<{
   pageRef: RefObject<HTMLDivElement | null>;
-  scope: SiteData;
   store: Store;
 }>;
 
-const InteractiveFeatures = ({ pageRef, scope, store }: InteractiveFeaturesProps) => {
-  useUrlOnScroll(store, pageRef);
-  useDeepLink({ pageRef, scope, store });
+const InteractiveFeatures = ({ pageRef, store }: InteractiveFeaturesProps) => {
+  const pathname = usePathname();
+  const resetScrollActivated = useNavigationStore((state) => state.resetScrollActivated);
+
+  useEffect(() => {
+    resetScrollActivated();
+  }, [pathname, resetScrollActivated]);
+
+  useTagTracking(pageRef, store);
   return null;
 };
 

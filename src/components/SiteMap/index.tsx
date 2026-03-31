@@ -59,9 +59,15 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     if (!currentCategoryId) {
       return false;
     }
-    // Match the tracked category or any of its ancestors
-    return category.id === currentCategoryId ||
-      store.categoryMap[currentCategoryId]?.parentId === category.id;
+    // Walk up the parent chain from the tracked category
+    let current: Category | undefined = store.categoryMap[currentCategoryId];
+    while (current) {
+      if (current.id === category.id) {
+        return true;
+      }
+      current = current.parentId ? store.categoryMap[current.parentId] : undefined;
+    }
+    return false;
   };
 
   const isCurrentTag = (tag: TagWithRelationships) => {

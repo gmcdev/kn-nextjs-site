@@ -1,9 +1,6 @@
 'use client';
 
-import { useInView } from 'react-intersection-observer';
-
 import type { PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
-import useNavigationStore from '@/stores/useNavigationStore';
 
 import Breadcrumbs from '../Breadcrumbs';
 import TagAhref from '../Breadcrumbs/TagAhref';
@@ -31,18 +28,6 @@ type TagProps = Readonly<{
 const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
   const { store } = useSiteData();
   const mediaSize = useMediaSize();
-  const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
-  const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
-
-  const { ref: tagInViewRef } = useInView({
-    onChange: (inView) => {
-      if (inView && scope && tag) {
-        setCurrentCategoryId(scope.category.id);
-        setCurrentTagId(tag.id);
-      }
-    },
-    threshold: 0.1,
-  });
 
   const isMusicCategory = rootCategorySlug === 'music';
   const displayMode: DisplayMode = isMusicCategory
@@ -83,7 +68,7 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
   const contentType = tagPost.postMeta.contentType;
 
   return (
-    <div className="tag" data-tag-slug={tag.slug} ref={tagInViewRef}>
+    <div className="tag" data-tag-slug={tag.slug} data-tag-id={tag.id} data-category-id={scope.category.id}>
       <div className="tag__header">
         <div className="tag__header-breadcrumbs">
           <Breadcrumbs store={store} post={tagPost} />

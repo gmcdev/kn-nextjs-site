@@ -8,60 +8,60 @@ import withBasePath from '@/utils/withBasePath';
 
 const useUrlOnScroll = (store: Store, pageRef: RefObject<HTMLDivElement | null>) => {
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
-  const currentPost = useNavigationStore((state) => state.currentPost);
+  const currentTagId = useNavigationStore((state) => state.currentTagId);
   const activateScroll = useNavigationStore((state) => state.activateScroll);
   const scrollActivated = useNavigationStore((state) => state.scrollActivated);
 
-  // Activate scroll tracking when user actually scrolls
+  // Activate scroll tracking on real user interaction (not layout-induced scroll)
   useEffect(() => {
     const element = pageRef.current;
     if (!element) {
       return;
     }
 
-    const handleScroll = () => {
+    const handleUserScroll = () => {
       activateScroll();
-      element.removeEventListener('scroll', handleScroll);
+      element.removeEventListener('wheel', handleUserScroll);
+      element.removeEventListener('touchstart', handleUserScroll);
+      element.removeEventListener('keydown', handleKeyScroll);
     };
 
-    element.addEventListener('scroll', handleScroll, { passive: true });
+    const handleKeyScroll = (event: Event) => {
+      const key = (event as KeyboardEvent).key;
+      if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'PageDown' || key === 'PageUp' || key === ' ') {
+        handleUserScroll();
+      }
+    };
+
+    element.addEventListener('wheel', handleUserScroll, { passive: true });
+    element.addEventListener('touchstart', handleUserScroll, { passive: true });
+    element.addEventListener('keydown', handleKeyScroll);
     return () => {
-      element.removeEventListener('scroll', handleScroll);
+      element.removeEventListener('wheel', handleUserScroll);
+      element.removeEventListener('touchstart', handleUserScroll);
+      element.removeEventListener('keydown', handleKeyScroll);
     };
   }, [activateScroll, pageRef]);
 
-  // Update URL as category/tag/post changes after scroll
+  // Update URL to /{categorySlug}/{tagSlug} as tags scroll into view
   useEffect(() => {
-    if (!scrollActivated) {
+    if (!scrollActivated || !currentCategoryId) {
       return;
     }
 
-    // If we have a current post (list view, after scroll), use post-level URL
-    if (currentPost) {
-      const leafCategoryId = currentPost.categoryIds.find(
-        (categoryId) => store.categoryMap[categoryId]?.parentId,
-      );
-      const leafCategory = leafCategoryId ? store.categoryMap[leafCategoryId] : null;
-      const fallbackCategory = store.categoryMap[currentPost.categoryIds[0]];
-
-      const path = leafCategory
-        ? `/${leafCategory.slug}/${currentPost.slug}`
-        : `/${fallbackCategory?.slug}`;
-
-      const nextUrl = `${window.location.origin}${withBasePath(path)}`;
-      window.history.replaceState({}, '', nextUrl);
+    const category = store.categoryMap[currentCategoryId];
+    if (!category) {
       return;
     }
 
-    // Otherwise update to category-level URL
-    if (currentCategoryId) {
-      const category = store.categoryMap[currentCategoryId];
-      if (category) {
-        const nextUrl = `${window.location.origin}${withBasePath(`/${category.slug}`)}`;
-        window.history.replaceState({}, '', nextUrl);
-      }
-    }
-  }, [currentCategoryId, currentPost, scrollActivated, store]);
+    const tag = currentTagId ? store.tagMap[currentTagId] : null;
+    const path = tag
+      ? `/${category.slug}/${tag.slug}`
+      : `/${category.slug}`;
+
+    const nextUrl = `${window.location.origin}${withBasePath(path)}`;
+    window.history.replaceState({}, '', nextUrl);
+  }, [currentCategoryId, currentTagId, scrollActivated, store]);
 };
 
 export default useUrlOnScroll;

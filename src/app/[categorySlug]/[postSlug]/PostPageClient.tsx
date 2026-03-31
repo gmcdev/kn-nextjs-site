@@ -60,7 +60,7 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
 
   return (
     <MediaListener>
-      <InteractiveFeatures pageRef={pageRef} scope={scope} store={store} />
+      <InteractiveFeatures pageRef={pageRef} store={store} />
       <PageLayout pageRef={pageRef}>
         <Site categorySlug={categorySlug} post={post} scope={scope} />
       </PageLayout>

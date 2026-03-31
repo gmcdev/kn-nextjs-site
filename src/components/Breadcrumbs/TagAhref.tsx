@@ -12,7 +12,7 @@ type TagAhrefProps = Readonly<PropsWithChildren<{
 
 const TagAhref = ({ category, children, tag }: TagAhrefProps) => {
   return (
-    <Link href={`/${category.slug}?t=${tag.slug}`}>
+    <Link href={`/${category.slug}/${tag.slug}`}>
       {children ?? tag.name}
     </Link>
   );
