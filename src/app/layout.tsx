@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { Montserrat, Merriweather } from 'next/font/google';
 
+import AudioPlayer from '@/components/AudioPlayer';
 import SiteDataProvider from '@/components/SiteDataProvider';
 import { getSiteData } from '@/lib/data';
 import '@/css/normalize.css';
 import '@/css/style.css';
+import './layout.scss';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -37,7 +39,10 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
     <html lang="en" className={`${montserrat.variable} ${merriweather.variable}`}>
       <body>
         <SiteDataProvider siteScopes={siteScopes} store={store}>
-          {children}
+          <div className="site-frame">
+            <main className="site-frame__top">{children}</main>
+            <AudioPlayer />
+          </div>
         </SiteDataProvider>
       </body>
     </html>
