@@ -22,7 +22,7 @@ const Header = ({ pageRef }: HeaderProps) => {
 
   const orderedCategories = useMemo(() => {
     const postCategoryId = currentPost?.categoryIds.find(
-      (categoryId: string) => !store.categoryMap[categoryId]?.parentId,
+      (categoryId: string) => !store.categoryMap[categoryId]?.parentId
     );
     const postCategory = postCategoryId ? store.categoryMap[postCategoryId] : undefined;
     return orderTopCategories(categories, postCategory);
@@ -32,7 +32,7 @@ const Header = ({ pageRef }: HeaderProps) => {
   const [animClasses, setAnimClasses] = useState({
     bigLogo: 'header__logo__showBigLogo',
     header: 'header__showBigHeader',
-    scrollLogo: 'header__logo-scroll__hideScrollLogo',
+    scrollLogo: 'header__logo-scroll__hideScrollLogo'
   });
 
   useEffect(() => {
@@ -43,14 +43,14 @@ const Header = ({ pageRef }: HeaderProps) => {
         setAnimClasses({
           bigLogo: 'header__logo__hideBigLogo',
           header: 'header__hideBigHeader',
-          scrollLogo: 'header__logo-scroll__showScrollLogo',
+          scrollLogo: 'header__logo-scroll__showScrollLogo'
         });
         hasScrolled.current = true;
       } else if (hasScrolled.current) {
         setAnimClasses({
           bigLogo: 'header__logo__showBigLogo',
           header: 'header__showBigHeader',
-          scrollLogo: 'header__logo-scroll__hideScrollLogo',
+          scrollLogo: 'header__logo-scroll__hideScrollLogo'
         });
       }
     };
@@ -74,7 +74,7 @@ const Header = ({ pageRef }: HeaderProps) => {
         <img
           src="/site/images/kn_logo_mobile.png"
           alt="King Nitram & the Merry Universe"
-          style={{ height: 29, width: 157 }}
+          style={{ height: 28, width: 157 }}
         />
       </div>
       <div className="header__logo-mobile">
@@ -90,15 +90,11 @@ const Header = ({ pageRef }: HeaderProps) => {
             category ? (
               <li
                 key={`menu-${category.slug}`}
-                className={
-                  !category.isSelected
-                    ? 'header__top-nav__menu--tab'
-                    : 'header__top-nav__menu--tab-selected'
-                }
+                className={!category.isSelected ? 'header__top-nav__menu--tab' : 'header__top-nav__menu--tab-selected'}
               >
                 <Link href={`/${category.slug}`}>{category.name.toUpperCase()}</Link>
               </li>
-            ) : null,
+            ) : null
           )}
         </menu>
       </div>
