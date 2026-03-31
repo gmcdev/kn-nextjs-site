@@ -18,7 +18,10 @@ type SiteMapProps = Readonly<{
 
 const SiteMap = ({ pageRef }: SiteMapProps) => {
   const { siteScopes, store } = useSiteData();
-  const { currentPost, setTagSwipeFor } = useNavigationStore();
+  const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
+  const currentTagId = useNavigationStore((state) => state.currentTagId);
+  const currentPost = useNavigationStore((state) => state.currentPost);
+  const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
 
   const hasScrolled = useRef(false);
   const [animClasses, setAnimClasses] = useState({ menu: '' });
@@ -53,17 +56,16 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
   };
 
   const isCurrentCategory = (category: Category) => {
-    if (!currentPost) {
+    if (!currentCategoryId) {
       return false;
     }
-    return currentPost.categoryIds.some((categoryId: string) => categoryId === category.id);
+    // Match the tracked category or any of its ancestors
+    return category.id === currentCategoryId ||
+      store.categoryMap[currentCategoryId]?.parentId === category.id;
   };
 
   const isCurrentTag = (tag: TagWithRelationships) => {
-    if (!currentPost?.tagIds.length) {
-      return false;
-    }
-    return currentPost.tagIds[0] === tag.id;
+    return tag.id === currentTagId;
   };
 
   const isCurrentPost = (post: PostWithRelationships) => {

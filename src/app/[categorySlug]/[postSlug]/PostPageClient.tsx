@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import findCategoryByPost from '@/components/Breadcrumbs/functions/findCategoryByPost';
 import InteractiveFeatures from '@/components/InteractiveFeatures';
@@ -8,6 +8,7 @@ import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import Site from '@/components/Site';
 import { useSiteData } from '@/components/SiteDataProvider';
+import useNavigationStore from '@/stores/useNavigationStore';
 import { getRequestedScopes } from '@/utils/scope-manager';
 
 type PostPageClientProps = Readonly<{
@@ -40,6 +41,18 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
     const result = getRequestedScopes(siteScopes, category);
     return result?.scope ?? null;
   }, [category, siteScopes]);
+
+  const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
+  const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
+
+  useEffect(() => {
+    if (category) {
+      setCurrentCategoryId(category.id);
+    }
+    if (post?.tagIds[0]) {
+      setCurrentTagId(post.tagIds[0]);
+    }
+  }, [category, post, setCurrentCategoryId, setCurrentTagId]);
 
   if (!post || !scope) {
     return <div>Post not found</div>;

@@ -3,21 +3,44 @@ import { create } from 'zustand';
 import type { PostWithRelationships } from '@/lib/types';
 
 type NavigationState = {
+  currentCategoryId: string | null;
   currentPost: PostWithRelationships | null;
+  currentTagId: string | null;
+  scrollActivated: boolean;
   tagSwipeMap: Record<string, number>;
 };
 
 type NavigationActions = {
+  activateScroll: () => void;
+  setCurrentCategoryId: (categoryId: string | null) => void;
   setCurrentPost: (post: PostWithRelationships | null) => void;
+  setCurrentTagId: (tagId: string | null) => void;
   setTagSwipeFor: (tagId: string, index: number) => void;
 };
 
-const useNavigationStore = create<NavigationState & NavigationActions>((set) => ({
+const useNavigationStore = create<NavigationState & NavigationActions>((set, get) => ({
+  currentCategoryId: null,
   currentPost: null,
+  currentTagId: null,
+  scrollActivated: false,
   tagSwipeMap: {},
 
+  activateScroll: () => {
+    set({ scrollActivated: true });
+  },
+
+  setCurrentCategoryId: (categoryId) => {
+    set({ currentCategoryId: categoryId });
+  },
+
   setCurrentPost: (post) => {
-    set({ currentPost: post });
+    if (get().scrollActivated) {
+      set({ currentPost: post });
+    }
+  },
+
+  setCurrentTagId: (tagId) => {
+    set({ currentTagId: tagId });
   },
 
   setTagSwipeFor: (tagId, index) => {

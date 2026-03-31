@@ -12,7 +12,7 @@ type UseDeepLinkParams = Readonly<{
 }>;
 
 const useDeepLink = ({ pageRef, scope, store }: UseDeepLinkParams) => {
-  const setCurrentPost = useNavigationStore((state) => state.setCurrentPost);
+  const activateScroll = useNavigationStore((state) => state.activateScroll);
   const processedRef = useRef(false);
 
   useEffect(() => {
@@ -25,11 +25,6 @@ const useDeepLink = ({ pageRef, scope, store }: UseDeepLinkParams) => {
     const tagDeepLink = params.get('t');
 
     if (!tagDeepLink || !scope.tags.length) {
-      // Set the first post as current
-      const firstPost = scope.tags[0]?.postIds[0];
-      if (firstPost) {
-        setCurrentPost(store.postMap[firstPost]);
-      }
       return;
     }
 
@@ -45,12 +40,11 @@ const useDeepLink = ({ pageRef, scope, store }: UseDeepLinkParams) => {
     }
 
     if (!linkedTag) {
-      const firstPost = scope.tags[0]?.postIds[0];
-      if (firstPost) {
-        setCurrentPost(store.postMap[firstPost]);
-      }
       return;
     }
+
+    // Activate scroll so the IO-driven currentPost updates take effect
+    activateScroll();
 
     // Sequential scroll hack: rapidly scroll to each preceding tag
     // to force virtualized items to render and provide accurate measurements
@@ -74,13 +68,7 @@ const useDeepLink = ({ pageRef, scope, store }: UseDeepLinkParams) => {
         }
       }, 50 * i);
     });
-
-    // Set the first post in the linked tag as current
-    const firstPostId = linkedTag.postIds[0];
-    if (firstPostId) {
-      setCurrentPost(store.postMap[firstPostId]);
-    }
-  }, [pageRef, scope, setCurrentPost, store]);
+  }, [activateScroll, pageRef, scope, store]);
 };
 
 export default useDeepLink;

@@ -1,6 +1,9 @@
 'use client';
 
+import { useInView } from 'react-intersection-observer';
+
 import type { PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
+import useNavigationStore from '@/stores/useNavigationStore';
 
 import Breadcrumbs from '../Breadcrumbs';
 import TagAhref from '../Breadcrumbs/TagAhref';
@@ -20,15 +23,28 @@ type DisplayMode = 'grid' | 'list';
 
 type TagProps = Readonly<{
   post?: PostWithRelationships;
+  rootCategorySlug?: string;
   scope?: SiteData;
   tag?: TagWithRelationships;
 }>;
 
-const Tag = ({ post, scope, tag }: TagProps) => {
+const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
   const { store } = useSiteData();
   const mediaSize = useMediaSize();
+  const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
+  const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
 
-  const isMusicCategory = scope?.category.slug === 'music';
+  const { ref: tagInViewRef } = useInView({
+    onChange: (inView) => {
+      if (inView && scope && tag) {
+        setCurrentCategoryId(scope.category.id);
+        setCurrentTagId(tag.id);
+      }
+    },
+    threshold: 0.1,
+  });
+
+  const isMusicCategory = rootCategorySlug === 'music';
   const displayMode: DisplayMode = isMusicCategory
     ? 'list'
     : mediaSize === 'large' ? 'grid' : 'list';
@@ -67,7 +83,7 @@ const Tag = ({ post, scope, tag }: TagProps) => {
   const contentType = tagPost.postMeta.contentType;
 
   return (
-    <div className="tag" data-tag-slug={tag.slug}>
+    <div className="tag" data-tag-slug={tag.slug} ref={tagInViewRef}>
       <div className="tag__header">
         <div className="tag__header-breadcrumbs">
           <Breadcrumbs store={store} post={tagPost} />

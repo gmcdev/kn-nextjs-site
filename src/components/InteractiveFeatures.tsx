@@ -13,7 +13,7 @@ type InteractiveFeaturesProps = Readonly<{
 }>;
 
 const InteractiveFeatures = ({ pageRef, scope, store }: InteractiveFeaturesProps) => {
-  useUrlOnScroll(store);
+  useUrlOnScroll(store, pageRef);
   useDeepLink({ pageRef, scope, store });
   return null;
 };
