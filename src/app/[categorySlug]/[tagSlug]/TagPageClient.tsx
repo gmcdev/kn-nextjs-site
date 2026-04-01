@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import InteractiveFeatures from '@/components/InteractiveFeatures';
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import { useSiteData } from '@/components/SiteDataProvider';
 import Tag from '@/components/Tag';
 import FooterNavigation from '@/components/Site/FooterNavigation';
+import useInteractiveFeatures from '@/hooks/useInteractiveFeatures';
+import { getRootCategory } from '@/lib/store';
 import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { getRequestedScopes } from '@/utils/scope-manager';
@@ -44,12 +45,8 @@ const TagPageClient = ({ categorySlug, initialPostSlug, tagSlug }: TagPageClient
     if (!category) {
       return categorySlug;
     }
-    let current = category;
-    while (current.parentId && store.categoryMap[current.parentId]) {
-      current = store.categoryMap[current.parentId];
-    }
-    return current.slug;
-  }, [category, categorySlug, store.categoryMap]);
+    return getRootCategory(store, category).slug;
+  }, [category, categorySlug, store]);
 
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
@@ -78,9 +75,10 @@ const TagPageClient = ({ categorySlug, initialPostSlug, tagSlug }: TagPageClient
     return <div>Tag not found</div>;
   }
 
+  useInteractiveFeatures(pageRef, store);
+
   return (
     <MediaListener>
-      <InteractiveFeatures pageRef={pageRef} store={store} />
       <PageLayout pageRef={pageRef}>
         <div className="feed-content">
           <div className="feed-content__inner">

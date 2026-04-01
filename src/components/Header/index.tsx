@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
-import { orderTopCategories } from '@/lib/store';
+import { getRootCategory, orderTopCategories } from '@/lib/store';
 import useNavigationStore from '@/stores/useNavigationStore';
+import { SCROLL_COLLAPSE_THRESHOLD, SCROLL_EXPAND_THRESHOLD } from '@/utils/layout-constants';
 
 import { useSiteData } from '../SiteDataProvider';
 
@@ -21,13 +22,10 @@ const Header = ({ pageRef }: HeaderProps) => {
   const categories = Object.values(store.categoryMap).filter((c) => !c.parentId);
 
   const orderedCategories = useMemo(() => {
-    // Walk up from the current category to find the root
-    let rootCategory = currentCategoryId ? store.categoryMap[currentCategoryId] : undefined;
-    while (rootCategory?.parentId && store.categoryMap[rootCategory.parentId]) {
-      rootCategory = store.categoryMap[rootCategory.parentId];
-    }
-    return orderTopCategories(categories, rootCategory);
-  }, [categories, currentCategoryId, store.categoryMap]);
+    const current = currentCategoryId ? store.categoryMap[currentCategoryId] : undefined;
+    const root = current ? getRootCategory(store, current) : undefined;
+    return orderTopCategories(categories, root);
+  }, [categories, currentCategoryId, store]);
 
   const hasScrolled = useRef(false);
   const [animClasses, setAnimClasses] = useState({
@@ -41,7 +39,7 @@ const Header = ({ pageRef }: HeaderProps) => {
     const isCollapsedRef = { current: false };
     const handleScroll = () => {
       const scrollY = pageRefElement?.scrollTop ?? 0;
-      if (!isCollapsedRef.current && scrollY > 140) {
+      if (!isCollapsedRef.current && scrollY > SCROLL_COLLAPSE_THRESHOLD) {
         isCollapsedRef.current = true;
         setAnimClasses({
           bigLogo: 'header__logo__hideBigLogo',
@@ -49,7 +47,7 @@ const Header = ({ pageRef }: HeaderProps) => {
           scrollLogo: 'header__logo-scroll__showScrollLogo',
         });
         hasScrolled.current = true;
-      } else if (isCollapsedRef.current && scrollY < 30) {
+      } else if (isCollapsedRef.current && scrollY < SCROLL_EXPAND_THRESHOLD) {
         isCollapsedRef.current = false;
         setAnimClasses({
           bigLogo: 'header__logo__showBigLogo',

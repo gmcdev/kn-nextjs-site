@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import InteractiveFeatures from '@/components/InteractiveFeatures';
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import Site from '@/components/Site';
 import { useSiteData } from '@/components/SiteDataProvider';
+import useInteractiveFeatures from '@/hooks/useInteractiveFeatures';
 import type { SiteData } from '@/lib/types';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { getRequestedScopes } from '@/utils/scope-manager';
@@ -56,9 +56,10 @@ const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
     return <div>Category not found</div>;
   }
 
+  useInteractiveFeatures(pageRef, store);
+
   return (
     <MediaListener>
-      <InteractiveFeatures pageRef={pageRef} store={store} />
       <PageLayout pageRef={pageRef}>
         <Site categorySlug={categorySlug} scope={scope} />
       </PageLayout>

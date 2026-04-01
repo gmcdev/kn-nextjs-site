@@ -9,31 +9,17 @@ import PauseIcon from '@/icons/PauseIcon';
 import PlayIcon from '@/icons/PlayIcon';
 import SkipBackIcon from '@/icons/SkipBackIcon';
 import SkipForwardIcon from '@/icons/SkipForwardIcon';
+import { collectAllTags } from '@/lib/store';
+import type { TagWithRelationships } from '@/lib/types';
 import useAudioStore from '@/stores/useAudioStore';
 import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { buildAudioTrack } from '@/utils/audio-manager';
-import withBasePath from '@/utils/withBasePath';
+import { replaceUrl } from '@/utils/withBasePath';
 
 import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
-
-import type { SiteData, TagWithRelationships } from '@/lib/types';
-
-const collectAllTags = (siteScopes: SiteData[]): { categoryId: string; tag: TagWithRelationships }[] => {
-  const result: { categoryId: string; tag: TagWithRelationships }[] = [];
-  const walk = (scope: SiteData) => {
-    if (scope.children.length > 0) {
-      scope.children.forEach((child) => walk(child));
-    }
-    scope.tags.forEach((tag) => {
-      result.push({ categoryId: scope.category.id, tag });
-    });
-  };
-  siteScopes.forEach((scope) => walk(scope));
-  return result;
-};
 
 const PostImageModal = () => {
   const { siteScopes, store } = useSiteData();
@@ -64,7 +50,7 @@ const PostImageModal = () => {
       return;
     }
     const path = `/${category.slug}/${tag.slug}/${currentPost.slug}`;
-    window.history.replaceState({}, '', `${window.location.origin}${withBasePath(path)}`);
+    replaceUrl(path);
   }, [currentCategoryId, currentPost, store.categoryMap, tag]);
 
   const close = useCallback(() => {
@@ -73,7 +59,7 @@ const PostImageModal = () => {
       const category = store.categoryMap[currentCategoryId];
       if (category) {
         const path = `/${category.slug}/${tag.slug}`;
-        window.history.replaceState({}, '', `${window.location.origin}${withBasePath(path)}`);
+        replaceUrl(path);
       }
     }
     closeModal();

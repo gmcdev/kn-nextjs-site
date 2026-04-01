@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 
-import findCategoryByPost from '@/components/Breadcrumbs/functions/findCategoryByPost';
-import InteractiveFeatures from '@/components/InteractiveFeatures';
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
 import Site from '@/components/Site';
 import { useSiteData } from '@/components/SiteDataProvider';
+import useInteractiveFeatures from '@/hooks/useInteractiveFeatures';
+import { getLeafCategory } from '@/lib/store';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { getRequestedScopes } from '@/utils/scope-manager';
 
@@ -29,7 +29,7 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
     if (!post) {
       return null;
     }
-    return findCategoryByPost(store, post) ??
+    return getLeafCategory(store, post) ??
       Object.values(store.categoryMap).find((c) => c.slug === categorySlug) ??
       null;
   }, [categorySlug, post, store]);
@@ -58,9 +58,10 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
     return <div>Post not found</div>;
   }
 
+  useInteractiveFeatures(pageRef, store);
+
   return (
     <MediaListener>
-      <InteractiveFeatures pageRef={pageRef} store={store} />
       <PageLayout pageRef={pageRef}>
         <Site categorySlug={categorySlug} post={post} scope={scope} />
       </PageLayout>

@@ -4,16 +4,12 @@ import { usePathname } from 'next/navigation';
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
 
-import useTagTracking from '@/hooks/useTagTracking';
 import type { Store } from '@/lib/types';
 import useNavigationStore from '@/stores/useNavigationStore';
 
-type InteractiveFeaturesProps = Readonly<{
-  pageRef: RefObject<HTMLDivElement | null>;
-  store: Store;
-}>;
+import useTagTracking from './useTagTracking';
 
-const InteractiveFeatures = ({ pageRef, store }: InteractiveFeaturesProps) => {
+const useInteractiveFeatures = (pageRef: RefObject<HTMLDivElement | null>, store: Store) => {
   const pathname = usePathname();
   const resetScrollActivated = useNavigationStore((state) => state.resetScrollActivated);
 
@@ -22,7 +18,6 @@ const InteractiveFeatures = ({ pageRef, store }: InteractiveFeaturesProps) => {
   }, [pathname, resetScrollActivated]);
 
   useTagTracking(pageRef, store);
-  return null;
 };
 
-export default InteractiveFeatures;
+export default useInteractiveFeatures;

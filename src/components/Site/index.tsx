@@ -2,20 +2,13 @@
 
 import type { ReactNode } from 'react';
 
-import type { Category, PostWithRelationships, SiteData, Store } from '@/lib/types';
+import { getRootCategory } from '@/lib/store';
+import type { PostWithRelationships, SiteData } from '@/lib/types';
 
 import { useSiteData } from '../SiteDataProvider';
 import Tag from '../Tag';
 
 import FooterNavigation from './FooterNavigation';
-
-const getRootCategorySlug = (store: Store, category: Category): string => {
-  let current = category;
-  while (current.parentId && store.categoryMap[current.parentId]) {
-    current = store.categoryMap[current.parentId];
-  }
-  return current.slug;
-};
 
 type SiteProps = Readonly<{
   categorySlug: string;
@@ -25,7 +18,7 @@ type SiteProps = Readonly<{
 
 const Site = ({ categorySlug, post, scope }: SiteProps) => {
   const { store } = useSiteData();
-  const rootCategorySlug = getRootCategorySlug(store, scope.category);
+  const rootCategorySlug = getRootCategory(store, scope.category).slug;
 
   const getCategoryJsx = (currentScope: SiteData): ReactNode => {
     if (currentScope.children.length > 0) {

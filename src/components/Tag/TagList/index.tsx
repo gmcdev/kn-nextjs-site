@@ -18,7 +18,7 @@ type TagListProps = Readonly<{
 
 const TagList = ({ contentType, tag }: TagListProps) => {
   const { store } = useSiteData();
-  const { setCurrentPost, setTagSwipeFor, tagSwipeMap } = useNavigationStore();
+  const { setTagSwipeFor, tagSwipeMap } = useNavigationStore();
   const nextPostIdx = tagSwipeMap[tag.id];
 
   const tagPostsElementRef = useRef<HTMLDivElement>(null);
@@ -35,11 +35,10 @@ const TagList = ({ contentType, tag }: TagListProps) => {
   const handleSetCurrentPost = useCallback(
     (nextPostIdx: number) => {
       currentPostIdxRef.current = nextPostIdx;
-      setCurrentPost(store.postMap[tag.postIds[nextPostIdx]]);
       setTagSwipeFor(tag.id, nextPostIdx);
       setScrollEnded(false);
     },
-    [setCurrentPost, setTagSwipeFor, store, tag],
+    [setTagSwipeFor, tag],
   );
 
   useEffect(() => {

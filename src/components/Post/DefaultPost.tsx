@@ -2,12 +2,15 @@
 
 import parse from 'html-react-parser';
 
-import type { InViewPostProps } from '.';
+import type { PostWithRelationships } from '@/lib/types';
 
-const DefaultPost = ({ inViewRef, post }: InViewPostProps) => {
+type DefaultPostProps = Readonly<{
+  post: PostWithRelationships;
+}>;
+
+const DefaultPost = ({ post }: DefaultPostProps) => {
   return (
     <article
-      ref={inViewRef}
       className="post__default"
       itemScope
       itemType="http://schema.org/Article"

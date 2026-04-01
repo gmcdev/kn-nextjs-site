@@ -1,0 +1,4 @@
+export const HEADER_HEIGHT = 145;
+export const HEADER_COLLAPSED_HEIGHT = 32;
+export const SCROLL_COLLAPSE_THRESHOLD = 140;
+export const SCROLL_EXPAND_THRESHOLD = 30;

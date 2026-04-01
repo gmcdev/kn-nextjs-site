@@ -267,3 +267,27 @@ export function orderTopCategories(categories: Category[], currentCategory?: Cat
     return undefined;
   });
 }
+
+// --- Shared Utilities ---
+
+export function getRootCategory(store: Store, category: Category): Category {
+  let current = category;
+  while (current.parentId && store.categoryMap[current.parentId]) {
+    current = store.categoryMap[current.parentId];
+  }
+  return current;
+}
+
+export function collectAllTags(siteScopes: SiteData[]): { categoryId: string; tag: TagWithRelationships }[] {
+  const result: { categoryId: string; tag: TagWithRelationships }[] = [];
+  const walk = (scope: SiteData) => {
+    if (scope.children.length > 0) {
+      scope.children.forEach((child) => walk(child));
+    }
+    scope.tags.forEach((tag) => {
+      result.push({ categoryId: scope.category.id, tag });
+    });
+  };
+  siteScopes.forEach((scope) => walk(scope));
+  return result;
+}

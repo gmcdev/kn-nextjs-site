@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { getRootCategory } from '@/lib/store';
 import type { Category, PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
 import useNavigationStore from '@/stores/useNavigationStore';
+import { SCROLL_COLLAPSE_THRESHOLD } from '@/utils/layout-constants';
 
 import CategoryAhref from '../Breadcrumbs/CategoryAhref';
 import TagAhref from '../Breadcrumbs/TagAhref';
@@ -20,7 +22,6 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
   const { siteScopes, store } = useSiteData();
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
   const currentTagId = useNavigationStore((state) => state.currentTagId);
-  const currentPost = useNavigationStore((state) => state.currentPost);
   const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
 
   const hasScrolled = useRef(false);
@@ -33,7 +34,7 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     }
     const handleScroll = () => {
       const scrollY = pageElement.scrollTop;
-      if (scrollY > 140) {
+      if (scrollY > SCROLL_COLLAPSE_THRESHOLD) {
         setAnimClasses({ menu: 'site-map__fixed' });
         hasScrolled.current = true;
       } else if (hasScrolled.current) {
@@ -74,12 +75,6 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     return tag.id === currentTagId;
   };
 
-  const isCurrentPost = (post: PostWithRelationships) => {
-    if (!currentPost) {
-      return false;
-    }
-    return post.id === currentPost.id;
-  };
 
   const getCategoryJsx = (scope: SiteData, depth = 0) => {
     const { category, children, tags } = scope;
@@ -134,37 +129,20 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     const { srcSet } = post.cdnFeaturedImage ?? {};
     return (
       <div key={`${category.id}-${tag.id}-${post.id}`} className="site-map__outline--post">
-        {isCurrentPost(post) ? (
-          <div className="site-map__outline--post-inner-current">
+        <button onClick={() => updateTagSwipeMap(category, tag, post, tagPostsIdx)}>
+          <div className="site-map__outline--post-inner">
             {srcSet ? (
               <img
-                alt="Current post thumbnail"
-                className="site-map__outline--post-thumbnail-current"
+                alt="Post thumbnail"
+                className="site-map__outline--post-thumbnail"
                 sizes="40px"
                 srcSet={srcSet}
               />
             ) : null}
-            <div className="site-map__outline--post-name site-map__outline--post-name-current">
-              {post.title}
-            </div>
-            <div className="site-map__outline--post-indicator-current">►</div>
+            <div className="site-map__outline--post-name">{post.title}</div>
+            <div className="site-map__outline--post-indicator">►</div>
           </div>
-        ) : (
-          <button onClick={() => updateTagSwipeMap(category, tag, post, tagPostsIdx)}>
-            <div className="site-map__outline--post-inner">
-              {srcSet ? (
-                <img
-                  alt="Post thumbnail"
-                  className="site-map__outline--post-thumbnail"
-                  sizes="40px"
-                  srcSet={srcSet}
-                />
-              ) : null}
-              <div className="site-map__outline--post-name">{post.title}</div>
-              <div className="site-map__outline--post-indicator">►</div>
-            </div>
-          </button>
-        )}
+        </button>
       </div>
     );
   };

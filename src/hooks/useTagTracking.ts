@@ -4,7 +4,7 @@ import { type RefObject, useCallback, useEffect } from 'react';
 
 import type { Store } from '@/lib/types';
 import useNavigationStore from '@/stores/useNavigationStore';
-import withBasePath from '@/utils/withBasePath';
+import { replaceUrl } from '@/utils/withBasePath';
 
 const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store) => {
   const scrollActivated = useNavigationStore((state) => state.scrollActivated);
@@ -91,7 +91,7 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
           const path = tag
             ? `/${category.slug}/${tag.slug}`
             : `/${category.slug}`;
-          window.history.replaceState({}, '', `${window.location.origin}${withBasePath(path)}`);
+          replaceUrl(path);
         }
       }
     }

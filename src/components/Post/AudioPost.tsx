@@ -12,9 +12,13 @@ import { CDN_URL } from '@/utils/constants';
 
 import { useSiteData } from '../SiteDataProvider';
 
-import type { InViewPostProps } from '.';
+import type { PostWithRelationships } from '@/lib/types';
 
-const AudioPost = ({ inViewRef, post }: InViewPostProps) => {
+type AudioPostProps = Readonly<{
+  post: PostWithRelationships;
+}>;
+
+const AudioPost = ({ post }: AudioPostProps) => {
   const { store } = useSiteData();
   const { currentTrack, isPlaying, pause, play, resume } = useAudioStore();
   const openModal = useModalStore((state) => state.open);
@@ -48,7 +52,6 @@ const AudioPost = ({ inViewRef, post }: InViewPostProps) => {
   return (
     <div
       className={`post__audio ${isSelected ? 'post__audio--selected' : ''}`}
-      ref={inViewRef}
     >
       {audioRequest.thumb ? (
         <button

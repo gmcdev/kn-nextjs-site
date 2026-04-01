@@ -3,8 +3,8 @@ import parse from 'html-react-parser';
 import type { AudioTrack } from '@/stores/useAudioStore';
 import type { PostWithRelationships, SiteData, Store } from '@/lib/types';
 
-import findCategoryByPost from '@/components/Breadcrumbs/functions/findCategoryByPost';
 import { getPostUri } from '@/components/Breadcrumbs/functions/getPostUri';
+import { getLeafCategory } from '@/lib/store';
 import { CDN_URL } from '@/utils/constants';
 import withBasePath from '@/utils/withBasePath';
 
@@ -28,7 +28,7 @@ export const buildAudioTrack = (store: Store, post: PostWithRelationships): Audi
   const { sourceUrl } = post.cdnFeaturedImage ?? {};
   const thumbUrl = sourceUrl && URL.canParse(sourceUrl) ? new URL(sourceUrl).pathname : sourceUrl;
 
-  const category = findCategoryByPost(store, post);
+  const category = getLeafCategory(store, post);
   const postUri = category ? getPostUri(category, post) : undefined;
 
   return {
