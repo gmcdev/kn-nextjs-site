@@ -1,15 +1,17 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
 import ArrowDown from '@/icons/ArrowDown';
-import ArrowUp from '@/icons/ArrowUp';
 import PauseIcon from '@/icons/PauseIcon';
 import PlayIcon from '@/icons/PlayIcon';
+import SkipBackIcon from '@/icons/SkipBackIcon';
+import SkipForwardIcon from '@/icons/SkipForwardIcon';
 import SpeakerIcon from '@/icons/SpeakerIcon';
 import useAudioStore from '@/stores/useAudioStore';
+import { buildAudioTrack, getOrderedAudioPostIds } from '@/utils/audio-manager';
 import { CDN_URL } from '@/utils/constants';
 
 import { useSiteData } from '../SiteDataProvider';
@@ -18,14 +20,53 @@ import './style.scss';
 
 const AudioPlayer = () => {
   const router = useRouter();
-  const { store } = useSiteData();
-  const { currentTrack, isPlaying, pause, resume, setIsPlaying, setWaveSurfer } = useAudioStore();
+  const { siteScopes, store } = useSiteData();
+  const { currentTrack, isPlaying, pause, play, resume, setIsPlaying, setWaveSurfer } = useAudioStore();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const waveSurferRef = useRef<WaveSurfer | null>(null);
   const waveformRef = useRef<HTMLDivElement>(null);
   const currentTrackSrcRef = useRef<string | null>(null);
+
+  const orderedAudioPostIds = useMemo(() => getOrderedAudioPostIds(store, siteScopes), [siteScopes, store]);
+
+  const currentIndex = useMemo(() => {
+    if (!currentTrack) {
+      return -1;
+    }
+    return orderedAudioPostIds.indexOf(currentTrack.postId);
+  }, [currentTrack, orderedAudioPostIds]);
+
+  const playInDirection = useCallback(
+    (startIndex: number, direction: 1 | -1) => {
+      let index = startIndex;
+      while (index >= 0 && index < orderedAudioPostIds.length) {
+        const post = store.postMap[orderedAudioPostIds[index]];
+        if (post) {
+          const track = buildAudioTrack(store, post);
+          if (track) {
+            play(track);
+            return;
+          }
+        }
+        index += direction;
+      }
+    },
+    [orderedAudioPostIds, play, store],
+  );
+
+  const handlePrevious = useCallback(() => {
+    if (currentIndex > 0) {
+      playInDirection(currentIndex - 1, -1);
+    }
+  }, [currentIndex, playInDirection]);
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < orderedAudioPostIds.length - 1) {
+      playInDirection(currentIndex + 1, 1);
+    }
+  }, [currentIndex, orderedAudioPostIds.length, playInDirection]);
 
   useEffect(() => {
     if (!currentTrack?.src || !waveformRef.current) {
@@ -64,6 +105,20 @@ const AudioPlayer = () => {
     });
     waveSurfer.on('finish', () => {
       setIsPlaying(false);
+      // Auto-advance: skip forward from current position, skipping unplayable posts
+      const startIndex = orderedAudioPostIds.indexOf(currentTrack.postId) + 1;
+      let index = startIndex;
+      while (index < orderedAudioPostIds.length) {
+        const nextPost = store.postMap[orderedAudioPostIds[index]];
+        if (nextPost) {
+          const nextTrack = buildAudioTrack(store, nextPost);
+          if (nextTrack) {
+            play(nextTrack);
+            return;
+          }
+        }
+        index++;
+      }
     });
 
     waveSurferRef.current = waveSurfer;
@@ -74,7 +129,7 @@ const AudioPlayer = () => {
       waveSurferRef.current = null;
       setWaveSurfer(null);
     };
-  }, [currentTrack?.src, setIsPlaying, setWaveSurfer]);
+  }, [currentTrack?.src, currentTrack?.postId, orderedAudioPostIds, play, setIsPlaying, setWaveSurfer, store]);
 
   const handlePlayPause = () => {
     if (!waveSurferRef.current) {
@@ -103,6 +158,8 @@ const AudioPlayer = () => {
 
   const { postId, thumb, title } = currentTrack;
   const postDate = store.postMap[postId]?.postMeta.creationDate;
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < orderedAudioPostIds.length - 1;
 
   return (
     <div className={`audio-player ${isCollapsed ? 'audio-player--collapsed' : ''}`}>
@@ -118,7 +175,7 @@ const AudioPlayer = () => {
       </div>
 
       <div className="audio-player__body">
-        {/* Artwork with play/pause overlay */}
+        {/* Artwork with transport overlay */}
         <div className="audio-player__artwork-container">
           {thumb ? (
             <button
@@ -128,13 +185,29 @@ const AudioPlayer = () => {
               onClick={handleGotoPost}
             />
           ) : null}
-          <button
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-            className="audio-player__play-pause"
-            onClick={handlePlayPause}
-          >
-            {isPlaying ? <PauseIcon /> : <PlayIcon />}
-          </button>
+          <div className="audio-player__transport">
+            <button
+              aria-label="Previous track"
+              className={`audio-player__transport-button ${!hasPrevious ? 'audio-player__transport-button--inactive' : ''}`}
+              onClick={handlePrevious}
+            >
+              <SkipBackIcon />
+            </button>
+            <button
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              className="audio-player__transport-button audio-player__transport-button--play"
+              onClick={handlePlayPause}
+            >
+              {isPlaying ? <PauseIcon /> : <PlayIcon />}
+            </button>
+            <button
+              aria-label="Next track"
+              className={`audio-player__transport-button ${!hasNext ? 'audio-player__transport-button--inactive' : ''}`}
+              onClick={handleNext}
+            >
+              <SkipForwardIcon />
+            </button>
+          </div>
         </div>
 
         {/* Info + waveform */}
