@@ -12,6 +12,7 @@ type ModalActions = {
   close: () => void;
   goToIndex: (index: number) => void;
   open: (post: PostWithRelationships, tag: TagWithRelationships) => void;
+  switchTag: (tag: TagWithRelationships, startIndex: number) => void;
 };
 
 const useModalStore = create<ModalState & ModalActions>((set) => ({
@@ -30,6 +31,10 @@ const useModalStore = create<ModalState & ModalActions>((set) => ({
   open: (post, tag) => {
     const index = tag.postIds.indexOf(post.id);
     set({ currentIndex: index >= 0 ? index : 0, post, tag });
+  },
+
+  switchTag: (tag, startIndex) => {
+    set({ currentIndex: startIndex, tag });
   },
 }));
 

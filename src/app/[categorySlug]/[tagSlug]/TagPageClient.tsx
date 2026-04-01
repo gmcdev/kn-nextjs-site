@@ -8,15 +8,17 @@ import PageLayout from '@/components/PageLayout';
 import { useSiteData } from '@/components/SiteDataProvider';
 import Tag from '@/components/Tag';
 import FooterNavigation from '@/components/Site/FooterNavigation';
+import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { getRequestedScopes } from '@/utils/scope-manager';
 
 type TagPageClientProps = Readonly<{
   categorySlug: string;
+  initialPostSlug?: string;
   tagSlug: string;
 }>;
 
-const TagPageClient = ({ categorySlug, tagSlug }: TagPageClientProps) => {
+const TagPageClient = ({ categorySlug, initialPostSlug, tagSlug }: TagPageClientProps) => {
   const { siteScopes, store } = useSiteData();
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +53,7 @@ const TagPageClient = ({ categorySlug, tagSlug }: TagPageClientProps) => {
 
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
+  const openModal = useModalStore((state) => state.open);
 
   useEffect(() => {
     if (category) {
@@ -60,6 +63,16 @@ const TagPageClient = ({ categorySlug, tagSlug }: TagPageClientProps) => {
       setCurrentTagId(tag.id);
     }
   }, [category, tag, setCurrentCategoryId, setCurrentTagId]);
+
+  // Open modal to initial post if specified (deep link)
+  useEffect(() => {
+    if (initialPostSlug && tag) {
+      const post = Object.values(store.postMap).find((p) => p.slug === initialPostSlug);
+      if (post) {
+        openModal(post, tag);
+      }
+    }
+  }, [initialPostSlug, openModal, store.postMap, tag]);
 
   if (!category || !scope || !tag) {
     return <div>Tag not found</div>;

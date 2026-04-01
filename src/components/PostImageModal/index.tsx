@@ -1,26 +1,83 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import ArrowLeft from '@/icons/ArrowLeft';
 import ArrowRight from '@/icons/ArrowRight';
 import CircleIcon from '@/icons/CircleIcon';
+import PauseIcon from '@/icons/PauseIcon';
+import PlayIcon from '@/icons/PlayIcon';
+import SkipBackIcon from '@/icons/SkipBackIcon';
+import SkipForwardIcon from '@/icons/SkipForwardIcon';
+import useAudioStore from '@/stores/useAudioStore';
 import useModalStore from '@/stores/useModalStore';
+import useNavigationStore from '@/stores/useNavigationStore';
+import { buildAudioTrack } from '@/utils/audio-manager';
+import withBasePath from '@/utils/withBasePath';
 
 import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
 
+import type { SiteData, TagWithRelationships } from '@/lib/types';
+
+const collectAllTags = (siteScopes: SiteData[]): { categoryId: string; tag: TagWithRelationships }[] => {
+  const result: { categoryId: string; tag: TagWithRelationships }[] = [];
+  const walk = (scope: SiteData) => {
+    if (scope.children.length > 0) {
+      scope.children.forEach((child) => walk(child));
+    }
+    scope.tags.forEach((tag) => {
+      result.push({ categoryId: scope.category.id, tag });
+    });
+  };
+  siteScopes.forEach((scope) => walk(scope));
+  return result;
+};
+
 const PostImageModal = () => {
-  const { store } = useSiteData();
-  const { close, currentIndex, goToIndex, post, tag } = useModalStore();
+  const { siteScopes, store } = useSiteData();
+  const { close: closeModal, currentIndex, goToIndex, post, switchTag, tag } = useModalStore();
+  const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
+  const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
+  const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const carouselRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isNavigatingRef = useRef(false);
 
+  const { currentTrack, isPlaying, pause: pauseAudio, play: playAudio, resume: resumeAudio } = useAudioStore();
+
   const postIds = tag?.postIds ?? [];
   const currentPost = postIds[currentIndex] ? store.postMap[postIds[currentIndex]] : post;
   const cdnFeaturedImage = currentPost?.cdnFeaturedImage;
+  const isAudioPost = currentPost?.postMeta.contentType === 'audio';
+  const isCurrentTrack = currentTrack?.postId === currentPost?.id;
+  const isCurrentlyPlaying = isCurrentTrack && isPlaying;
+
+  // Update URL to /{categorySlug}/{tagSlug}/{postSlug} as user navigates
+  useEffect(() => {
+    if (!currentPost || !tag || !currentCategoryId) {
+      return;
+    }
+    const category = store.categoryMap[currentCategoryId];
+    if (!category) {
+      return;
+    }
+    const path = `/${category.slug}/${tag.slug}/${currentPost.slug}`;
+    window.history.replaceState({}, '', `${window.location.origin}${withBasePath(path)}`);
+  }, [currentCategoryId, currentPost, store.categoryMap, tag]);
+
+  const close = useCallback(() => {
+    // Revert URL to /{categorySlug}/{tagSlug}
+    if (tag && currentCategoryId) {
+      const category = store.categoryMap[currentCategoryId];
+      if (category) {
+        const path = `/${category.slug}/${tag.slug}`;
+        window.history.replaceState({}, '', `${window.location.origin}${withBasePath(path)}`);
+      }
+    }
+    closeModal();
+  }, [closeModal, currentCategoryId, store.categoryMap, tag]);
 
   const scrollToIndex = useCallback((index: number) => {
     const carousel = carouselRef.current;
@@ -35,21 +92,40 @@ const PostImageModal = () => {
     }, 400);
   }, []);
 
+  const allTags = useMemo(() => collectAllTags(siteScopes), [siteScopes]);
+  const currentTagIndex = useMemo(
+    () => tag ? allTags.findIndex((entry) => entry.tag.id === tag.id) : -1,
+    [allTags, tag],
+  );
+
+  const jumpToTag = useCallback((tagEntry: { categoryId: string; tag: TagWithRelationships }, startIndex: number) => {
+    setCurrentCategoryId(tagEntry.categoryId);
+    setCurrentTagId(tagEntry.tag.id);
+    switchTag(tagEntry.tag, startIndex);
+  }, [setCurrentCategoryId, setCurrentTagId, switchTag]);
+
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0) {
       const nextIndex = currentIndex - 1;
       goToIndex(nextIndex);
       scrollToIndex(nextIndex);
+    } else if (currentTagIndex > 0) {
+      const previousTagEntry = allTags[currentTagIndex - 1];
+      const lastIndex = previousTagEntry.tag.postIds.length - 1;
+      jumpToTag(previousTagEntry, lastIndex);
     }
-  }, [currentIndex, goToIndex, scrollToIndex]);
+  }, [allTags, currentIndex, currentTagIndex, goToIndex, jumpToTag, scrollToIndex]);
 
   const goToNext = useCallback(() => {
     if (currentIndex < postIds.length - 1) {
       const nextIndex = currentIndex + 1;
       goToIndex(nextIndex);
       scrollToIndex(nextIndex);
+    } else if (currentTagIndex < allTags.length - 1) {
+      const nextTagEntry = allTags[currentTagIndex + 1];
+      jumpToTag(nextTagEntry, 0);
     }
-  }, [currentIndex, goToIndex, postIds.length, scrollToIndex]);
+  }, [allTags, currentIndex, currentTagIndex, goToIndex, jumpToTag, postIds.length, scrollToIndex]);
 
   // Detect scroll-snap settling to sync currentIndex
   const handleScroll = useCallback(() => {
@@ -74,7 +150,17 @@ const PostImageModal = () => {
   // Scroll to initial position when modal opens
   useEffect(() => {
     if (post && carouselRef.current) {
-      carouselRef.current.scrollLeft = currentIndex * carouselRef.current.clientWidth;
+      const carousel = carouselRef.current;
+      // Wait for layout so clientWidth is accurate
+      requestAnimationFrame(() => {
+        if (carousel.clientWidth > 0) {
+          isNavigatingRef.current = true;
+          carousel.scrollLeft = currentIndex * carousel.clientWidth;
+          setTimeout(() => {
+            isNavigatingRef.current = false;
+          }, 100);
+        }
+      });
     }
   }, [post, tag]); // Only on open, not on index change
 
@@ -100,6 +186,9 @@ const PostImageModal = () => {
     }
   }, [handleKeyDown, post]);
 
+  const isAtAbsoluteStart = currentIndex === 0 && currentTagIndex <= 0;
+  const isAtAbsoluteEnd = currentIndex === postIds.length - 1 && currentTagIndex >= allTags.length - 1;
+
   if (!post || !tag) {
     return null;
   }
@@ -118,7 +207,7 @@ const PostImageModal = () => {
           <div className="post-image-modal__tag-name">{tag.name}</div>
           <div className="post-image-modal__nav">
             <button
-              className={`post-image-modal__nav-arrow ${currentIndex === 0 ? 'post-image-modal__nav-arrow--inactive' : ''}`}
+              className={`post-image-modal__nav-arrow ${isAtAbsoluteStart ? 'post-image-modal__nav-arrow--inactive' : ''}`}
               onClick={goToPrevious}
               aria-label="Previous"
             >
@@ -140,7 +229,7 @@ const PostImageModal = () => {
               ))}
             </div>
             <button
-              className={`post-image-modal__nav-arrow ${currentIndex === postIds.length - 1 ? 'post-image-modal__nav-arrow--inactive' : ''}`}
+              className={`post-image-modal__nav-arrow ${isAtAbsoluteEnd ? 'post-image-modal__nav-arrow--inactive' : ''}`}
               onClick={goToNext}
               aria-label="Next"
             >
@@ -154,9 +243,13 @@ const PostImageModal = () => {
           ref={carouselRef}
           onScroll={handleScroll}
         >
-          {postIds.map((postId) => {
+          {postIds.map((postId, index) => {
             const carouselPost = store.postMap[postId];
             const image = carouselPost?.cdnFeaturedImage;
+            const isSlideAudio = carouselPost?.postMeta.contentType === 'audio';
+            const isSlideCurrentTrack = currentTrack?.postId === postId;
+            const isSlidePlaying = isSlideCurrentTrack && isPlaying;
+
             return (
               <div className="post-image-modal__slide" key={postId}>
                 {image ? (
@@ -167,6 +260,49 @@ const PostImageModal = () => {
                     sizes="95vw"
                     srcSet={image.srcSet}
                   />
+                ) : null}
+                {isSlideAudio && index === currentIndex ? (
+                  <div className="post-image-modal__audio-transport">
+                    <button
+                      aria-label="Previous track"
+                      className={`post-image-modal__audio-button ${isAtAbsoluteStart ? 'post-image-modal__audio-button--inactive' : ''}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goToPrevious();
+                      }}
+                    >
+                      <SkipBackIcon />
+                    </button>
+                    <button
+                      aria-label={isSlidePlaying ? 'Pause' : 'Play'}
+                      className="post-image-modal__audio-button post-image-modal__audio-button--play"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!isSlideCurrentTrack) {
+                          const track = buildAudioTrack(store, carouselPost);
+                          if (track) {
+                            playAudio(track);
+                          }
+                        } else if (isSlidePlaying) {
+                          pauseAudio();
+                        } else {
+                          resumeAudio();
+                        }
+                      }}
+                    >
+                      {isSlidePlaying ? <PauseIcon /> : <PlayIcon />}
+                    </button>
+                    <button
+                      aria-label="Next track"
+                      className={`post-image-modal__audio-button ${isAtAbsoluteEnd ? 'post-image-modal__audio-button--inactive' : ''}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        goToNext();
+                      }}
+                    >
+                      <SkipForwardIcon />
+                    </button>
+                  </div>
                 ) : null}
               </div>
             );

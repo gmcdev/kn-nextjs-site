@@ -6,7 +6,7 @@ import PostPageClient from './PostPageClient';
 import TagPageClient from './TagPageClient';
 
 type SlugPageProps = Readonly<{
-  params: Promise<{ categorySlug: string; postSlug: string }>;
+  params: Promise<{ categorySlug: string; tagSlug: string }>;
 }>;
 
 export async function generateStaticParams() {
@@ -17,12 +17,12 @@ export async function generateStaticParams() {
     const leafCategory = getLeafCategory(store, post);
     return {
       categorySlug: leafCategory.slug,
-      postSlug: post.slug,
+      tagSlug: post.slug,
     };
   });
 
   // Tag params: /{categorySlug}/{tagSlug} — only at leaf scopes (no children)
-  const tagParams: { categorySlug: string; postSlug: string }[] = [];
+  const tagParams: { categorySlug: string; tagSlug: string }[] = [];
   const collectTagParams = (scope: { category: { slug: string }; children: typeof siteScopes; tags: { slug: string }[] }) => {
     if (scope.children.length > 0) {
       scope.children.forEach((child) => collectTagParams(child));
@@ -31,7 +31,7 @@ export async function generateStaticParams() {
     scope.tags.forEach((tag) => {
       tagParams.push({
         categorySlug: scope.category.slug,
-        postSlug: tag.slug,
+        tagSlug: tag.slug,
       });
     });
   };
@@ -40,10 +40,10 @@ export async function generateStaticParams() {
   // Filter out any entries with missing slugs and deduplicate
   const seen = new Set<string>();
   return [...postParams, ...tagParams].filter((entry) => {
-    if (!entry.categorySlug || !entry.postSlug) {
+    if (!entry.categorySlug || !entry.tagSlug) {
       return false;
     }
-    const key = `${entry.categorySlug}/${entry.postSlug}`;
+    const key = `${entry.categorySlug}/${entry.tagSlug}`;
     if (seen.has(key)) {
       return false;
     }
@@ -57,11 +57,11 @@ const stripHtml = (html: string): string => {
 };
 
 export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
-  const { categorySlug, postSlug } = await params;
+  const { categorySlug, tagSlug } = await params;
   const { store } = await getSiteData();
 
   // Check if it's a tag
-  const tag = Object.values(store.tagMap).find((t) => t.slug === postSlug);
+  const tag = Object.values(store.tagMap).find((t) => t.slug === tagSlug);
   if (tag) {
     const category = Object.values(store.categoryMap).find((c) => c.slug === categorySlug);
     return {
@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
   }
 
   // Otherwise it's a post
-  const post = Object.values(store.postMap).find((p) => p.slug === postSlug);
+  const post = Object.values(store.postMap).find((p) => p.slug === tagSlug);
   if (!post) {
     return { title: 'King Nitram' };
   }
@@ -95,16 +95,16 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
 }
 
 const SlugPage = async ({ params }: SlugPageProps) => {
-  const { categorySlug, postSlug } = await params;
+  const { categorySlug, tagSlug } = await params;
   const { store } = await getSiteData();
 
   // Check if the slug matches a tag
-  const tag = Object.values(store.tagMap).find((t) => t.slug === postSlug);
+  const tag = Object.values(store.tagMap).find((t) => t.slug === tagSlug);
   if (tag) {
-    return <TagPageClient categorySlug={categorySlug} tagSlug={postSlug} />;
+    return <TagPageClient categorySlug={categorySlug} tagSlug={tagSlug} />;
   }
 
-  return <PostPageClient categorySlug={categorySlug} postSlug={postSlug} />;
+  return <PostPageClient categorySlug={categorySlug} postSlug={tagSlug} />;
 };
 
 export default SlugPage;
