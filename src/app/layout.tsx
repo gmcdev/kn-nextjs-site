@@ -48,11 +48,9 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
     <html lang="en" className={`${montserrat.variable} ${merriweather.variable}`}>
       <body>
         <SiteDataProvider siteScopes={siteScopes} store={store}>
-          <div className="site-frame">
-            <main className="site-frame__top">{children}</main>
-            <AudioPlayer />
-            <PostImageModal />
-          </div>
+          {children}
+          <AudioPlayer />
+          <PostImageModal />
         </SiteDataProvider>
       </body>
     </html>

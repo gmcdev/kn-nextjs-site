@@ -1,204 +1,224 @@
-.music {
+.audio-player {
   background-color: var(--color-audio-bg);
-  border: 4px solid var(--color-audio-border);
-  box-sizing: content-box;
-  display: flex;
-  height: 200px;
-  overflow: hidden;
+  border: 2px solid var(--color-audio-border);
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  width: min(15%, 200px);
+  z-index: 500;
 
-  &__thumbnail {
+  &__handle {
+    display: none;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  // Desktop: artwork at bottom, info on top
+  &__artwork-container {
+    order: 2;
+    position: relative;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    order: 1;
+  }
+
+  &__title {
+    background: none;
+    border: none;
+    color: var(--color-heading-black);
+    cursor: pointer;
+    font-family: var(--fontFamily-sans);
+    font-size: var(--fontSize-0);
+    font-weight: var(--fontWeight-bold);
+    overflow: hidden;
+    padding: var(--spacing-2) var(--spacing-2) 0;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--color-menu-selected-text);
+    }
+  }
+
+  &__date {
+    color: var(--color-site-map-text);
+    font-family: var(--fontFamily-sans);
+    font-size: var(--fontSize-00);
+    font-style: italic;
+    font-weight: var(--fontWeight-medium);
+    padding: 0 var(--spacing-2);
+  }
+
+  &__waveform {
+    padding: var(--spacing-1) var(--spacing-2);
+    position: relative;
+
+    &-mirror-fx {
+      background: linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 1) 100%
+      );
+      height: 50%;
+      opacity: 0.5;
+      pointer-events: none;
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      z-index: 2;
+    }
+  }
+
+  &__artwork {
+    aspect-ratio: 1;
     background: none;
     background-position: center;
     background-size: cover;
     border: none;
-    border-right: 4px solid var(--color-audio-border);
-    box-sizing: content-box;
+    border-top: 2px solid var(--color-audio-border);
     cursor: pointer;
-    height: 200px;
+    display: block;
     padding: 0;
-    width: 200px;
+    width: 100%;
   }
 
-  &__player {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: var(--spacing-4) var(--spacing-8) var(--spacing-6);
-
-    &-headline {
-      background: none;
-      border: none;
-      color: var(--color-heading-black);
-      cursor: pointer;
-      font-family: var(--fontFamily-sans);
-      font-size: var(--fontSize-3);
-      font-weight: var(--fontWeight-bold);
-      padding: 0;
-      text-align: left;
-    }
-
-    &--waveform {
-      position: relative;
-
-      &-mirror-fx {
-        background: linear-gradient(
-          0deg,
-          rgba(0, 0, 0, 0) 0%,
-          rgba(0, 0, 0, 1) 100%
-        );
-        height: 50%;
-        opacity: 0.5;
-        pointer-events: none;
-        position: absolute;
-        top: 50%;
-        width: 100%;
-        z-index: 2;
-      }
-
-      &-progress {
-        display: flex;
-        font-family: var(--fontFamily-sans);
-        font-size: var(--fontSize-1);
-        font-weight: var(--fontWeight-semibold);
-        line-height: var(--lineHeight-none);
-        pointer-events: none;
-        position: absolute;
-        top: 45%;
-        z-index: 5;
-
-        &-played {
-          background-color: #000000;
-          border: 1px solid var(--color-site-map-text);
-          border-radius: 5px;
-          border-right: 2px solid var(--color-menu-selected-text);
-          color: var(--color-menu-text);
-          left: -83px;
-          padding: 2px 0;
-          position: absolute;
-          text-align: center;
-          width: 85px;
-        }
-
-        &-remaining {
-          background-color: #000000;
-          border: 1px solid var(--color-site-map-text);
-          border-left: 2px solid var(--color-menu-selected-text);
-          border-radius: 5px;
-          left: 0;
-          padding: 2px 0;
-          position: absolute;
-          text-align: center;
-          width: 85px;
-        }
-      }
-    }
-  }
-
-  &__control {
+  &__play-pause {
     align-items: center;
-    background: none;
+    background-color: rgba(0, 0, 0, 0.45);
     border: none;
-    border-left: 4px solid var(--color-audio-border);
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
-    height: 200px;
     justify-content: center;
-    padding: 0;
-    width: 200px;
+    left: 50%;
+    padding: var(--spacing-2);
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
 
     & svg {
       color: var(--color-heading-black);
-      cursor: pointer;
-      height: 120px;
-      width: 120px;
-
-      &:hover {
-        color: var(--color-menu-selected-text);
-      }
+      height: 48px;
+      width: 48px;
     }
   }
 
-  &__collapse-expand {
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    position: absolute;
+  // =====================
+  // Mobile
+  // =====================
+  @media screen and (max-width: 968px) {
+    border-top: 2px solid var(--color-audio-border);
     width: 100%;
 
-    &--inner {
+    &__handle {
+      display: flex;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -100%);
+    }
+
+    &__handle-button {
       background-color: var(--color-audio-bg);
       border: 2px solid var(--color-audio-border);
-      border-top: unset;
+      border-bottom: unset;
+      border-radius: 8px 8px 0 0;
       color: var(--color-audio-play);
       cursor: pointer;
-      padding: var(--spacing-1) var(--spacing-8) 0;
-      pointer-events: all;
-    }
-  }
-
-  @media screen and (max-width: 968px) {
-    height: 100px;
-
-    &__thumbnail {
-      height: 100px;
-      width: 100px;
-    }
-
-    &__player {
-      flex: 1;
-      padding: var(--spacing-0) var(--spacing-2);
-
-      &-headline {
-        font-size: var(--fontSize-2);
-        margin: var(--spacing-0) 0 var(--spacing-0);
-      }
-
-      &--waveform {
-        transform: scale(1, 0.5);
-        transform-origin: top;
-
-        &-progress {
-          visibility: hidden;
-        }
-      }
-    }
-
-    &__control {
-      height: 100px;
-      width: 100px;
+      padding: var(--spacing-2) var(--spacing-8);
 
       & svg {
-        height: 60px;
-        width: 60px;
+        height: 24px;
+        width: 24px;
       }
     }
 
-    &__collapse-expand {
-      &--inner {
-        padding: 0 var(--spacing-6) 0;
+    &--collapsed &__handle-button {
+      background-color: var(--color-menu-selected-bg);
+      border: none;
+      color: var(--color-menu-selected-text);
+    }
 
-        & svg {
-          height: 14px;
-          width: 14px;
-        }
+    &--collapsed &__body {
+      display: none;
+    }
+
+    &__body {
+      flex-direction: row;
+    }
+
+    // Mobile: artwork on left
+    &__artwork-container {
+      flex-shrink: 0;
+      order: 0;
+    }
+
+    &__artwork {
+      border-right: 2px solid var(--color-audio-border);
+      border-top: none;
+      height: 100px;
+      width: 100px;
+    }
+
+    &__play-pause {
+      & svg {
+        height: 36px;
+        width: 36px;
       }
+    }
+
+    // Mobile: info on right, fills remaining space
+    &__info {
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+      order: 0;
+      overflow: hidden;
+      padding: var(--spacing-1) 0;
+    }
+
+    &__title {
+      font-size: var(--fontSize-1);
+      padding: 0 var(--spacing-2);
+    }
+
+    &__date {
+      padding: 0 var(--spacing-2);
+    }
+
+    &__waveform {
+      height: 48px;
     }
   }
 
   @media screen and (max-width: 420px) {
-    border: 2px solid var(--color-audio-border);
-
-    &__thumbnail {
-      display: none;
+    &__artwork {
+      height: 80px;
+      width: 80px;
     }
 
-    &__player {
-      &-headline {
-        font-size: var(--fontSize-1);
+    &__play-pause {
+      & svg {
+        height: 28px;
+        width: 28px;
       }
     }
 
-    &__control {
-      border-left: 2px solid var(--color-audio-border);
+    &__title {
+      font-size: var(--fontSize-0);
     }
   }
 }
