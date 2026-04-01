@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Montserrat, Merriweather } from 'next/font/google';
 
 import AudioPlayer from '@/components/AudioPlayer';
+import PostImageModal from '@/components/PostImageModal';
 import SiteDataProvider from '@/components/SiteDataProvider';
 import { getSiteData } from '@/lib/data';
 import '@/css/normalize.css';
@@ -50,6 +51,7 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
           <div className="site-frame">
             <main className="site-frame__top">{children}</main>
             <AudioPlayer />
+            <PostImageModal />
           </div>
         </SiteDataProvider>
       </body>

@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import PauseIcon from '@/icons/PauseIcon';
 import PlayIcon from '@/icons/PlayIcon';
 import useAudioStore from '@/stores/useAudioStore';
+import useModalStore from '@/stores/useModalStore';
 import { CDN_URL } from '@/utils/constants';
 import withBasePath from '@/utils/withBasePath';
 
@@ -18,6 +19,7 @@ import type { InViewPostProps } from '.';
 const AudioPost = ({ inViewRef, post }: InViewPostProps) => {
   const { store } = useSiteData();
   const { currentTrack, isPlaying, pause, play, resume } = useAudioStore();
+  const openModal = useModalStore((state) => state.open);
 
   const audioRequest = useMemo(() => {
     const postContentElements = parse(post.content);
@@ -78,6 +80,13 @@ const AudioPost = ({ inViewRef, post }: InViewPostProps) => {
         <div
           className="post__audio--thumbnail"
           style={{ backgroundImage: `url(${CDN_URL}${audioRequest.thumb})` }}
+          onClick={(event) => {
+            event.stopPropagation();
+            const tag = post.tagIds[0] ? store.tagMap[post.tagIds[0]] : null;
+            if (tag) {
+              openModal(post, tag);
+            }
+          }}
         />
       ) : null}
 

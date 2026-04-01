@@ -1,6 +1,7 @@
 'use client';
 
 import type { TagWithRelationships } from '@/lib/types';
+import useModalStore from '@/stores/useModalStore';
 
 import { useSiteData } from '../../SiteDataProvider';
 
@@ -35,7 +36,7 @@ const TagGrid = ({ contentType, tag }: TagGridProps) => {
             key={postId}
             style={{ height: gridHeight }}
           >
-            <TagGridItem postId={postId} />
+            <TagGridItem postId={postId} tag={tag} />
           </div>
         ))}
       </div>
@@ -47,11 +48,22 @@ export default TagGrid;
 
 type TagGridItemProps = Readonly<{
   postId: string;
+  tag: TagWithRelationships;
 }>;
 
-const TagGridItem = ({ postId }: TagGridItemProps) => {
+const TagGridItem = ({ postId, tag }: TagGridItemProps) => {
   const { store } = useSiteData();
+  const open = useModalStore((state) => state.open);
   const post = store.postMap[postId];
   const { srcSet } = post.cdnFeaturedImage ?? {};
-  return srcSet ? <img alt="Post thumbnail" srcSet={srcSet} /> : null;
+
+  if (!srcSet) {
+    return null;
+  }
+
+  return (
+    <button className="tag-grid__post-button" onClick={() => open(post, tag)}>
+      <img alt={post.cdnFeaturedImage?.altText ?? 'Post thumbnail'} srcSet={srcSet} />
+    </button>
+  );
 };
