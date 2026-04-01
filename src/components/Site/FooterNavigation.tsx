@@ -54,7 +54,7 @@ const FooterNavigation = ({ categorySlug }: FooterNavigationProps) => {
   const currentTagId = useNavigationStore((state) => state.currentTagId);
 
   const scopeData = useMemo(() => {
-    const category = Object.values(store.categoryMap).find((c) => c.slug === categorySlug);
+    const category = store.categoryBySlug[categorySlug];
     if (!category) {
       return null;
     }
@@ -63,7 +63,7 @@ const FooterNavigation = ({ categorySlug }: FooterNavigationProps) => {
       return null;
     }
     return resultScopes;
-  }, [categorySlug, siteScopes, store]);
+  }, [categorySlug, siteScopes, store.categoryBySlug]);
 
   const tagNeighbors = useMemo(() => {
     if (!scopeData?.highestScope || !currentTagId) {

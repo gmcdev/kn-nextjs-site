@@ -41,12 +41,10 @@ export async function getSiteScopes(): Promise<SiteData[]> {
 
 export async function getPostBySlug(slug: string): Promise<PostWithRelationships | null> {
   const { store } = await getSiteData();
-  const post = Object.values(store.postMap).find((p) => p.slug === slug);
-  return post ?? null;
+  return store.postBySlug[slug] ?? null;
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const { store } = await getSiteData();
-  const category = Object.values(store.categoryMap).find((c) => c.slug === slug);
-  return category ?? null;
+  return store.categoryBySlug[slug] ?? null;
 }

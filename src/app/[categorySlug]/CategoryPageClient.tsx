@@ -26,10 +26,7 @@ const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
   const { siteScopes, store } = useSiteData();
   const pageRef = useRef<HTMLDivElement>(null);
 
-  const category = useMemo(
-    () => Object.values(store.categoryMap).find((c) => c.slug === categorySlug),
-    [categorySlug, store.categoryMap],
-  );
+  const category = store.categoryBySlug[categorySlug];
 
   const scope = useMemo(() => {
     if (!category) {

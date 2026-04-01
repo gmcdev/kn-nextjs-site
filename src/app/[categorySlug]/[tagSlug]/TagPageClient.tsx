@@ -23,10 +23,7 @@ const TagPageClient = ({ categorySlug, initialPostSlug, tagSlug }: TagPageClient
   const { siteScopes, store } = useSiteData();
   const pageRef = useRef<HTMLDivElement>(null);
 
-  const category = useMemo(
-    () => Object.values(store.categoryMap).find((c) => c.slug === categorySlug),
-    [categorySlug, store.categoryMap],
-  );
+  const category = store.categoryBySlug[categorySlug];
 
   const scope = useMemo(() => {
     if (!category) {
@@ -36,10 +33,7 @@ const TagPageClient = ({ categorySlug, initialPostSlug, tagSlug }: TagPageClient
     return result?.scope ?? null;
   }, [category, siteScopes]);
 
-  const tag = useMemo(
-    () => Object.values(store.tagMap).find((t) => t.slug === tagSlug),
-    [tagSlug, store.tagMap],
-  );
+  const tag = store.tagBySlug[tagSlug];
 
   const rootCategorySlug = useMemo(() => {
     if (!category) {
@@ -64,7 +58,7 @@ const TagPageClient = ({ categorySlug, initialPostSlug, tagSlug }: TagPageClient
   // Open modal to initial post if specified (deep link)
   useEffect(() => {
     if (initialPostSlug && tag) {
-      const post = Object.values(store.postMap).find((p) => p.slug === initialPostSlug);
+      const post = store.postBySlug[initialPostSlug];
       if (post) {
         openModal(post, tag);
       }

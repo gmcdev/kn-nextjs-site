@@ -53,8 +53,11 @@ export type PostMap = Record<string, PostWithRelationships>;
 export type TagMap = Record<string, TagWithRelationships>;
 
 export type Store = {
+  categoryBySlug: Record<string, Category>;
   categoryMap: CategoryMap;
+  postBySlug: Record<string, PostWithRelationships>;
   postMap: PostMap;
+  tagBySlug: Record<string, TagWithRelationships>;
   tagMap: TagMap;
 };
 

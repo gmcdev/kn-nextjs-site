@@ -1,5 +1,6 @@
 import { getSiteData } from '@/lib/data';
 import { getLeafCategory } from '@/lib/store';
+import { stripHtml } from '@/utils/string';
 import type { Metadata } from 'next';
 
 import PostPageClient from './PostPageClient';
@@ -52,18 +53,14 @@ export async function generateStaticParams() {
   });
 }
 
-const stripHtml = (html: string): string => {
-  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-};
-
 export async function generateMetadata({ params }: SlugPageProps): Promise<Metadata> {
   const { categorySlug, tagSlug } = await params;
   const { store } = await getSiteData();
 
   // Check if it's a tag
-  const tag = Object.values(store.tagMap).find((t) => t.slug === tagSlug);
+  const tag = store.tagBySlug[tagSlug];
   if (tag) {
-    const category = Object.values(store.categoryMap).find((c) => c.slug === categorySlug);
+    const category = store.categoryBySlug[categorySlug];
     return {
       description: `${tag.name} — ${category?.name ?? ''} by King Nitram`,
       openGraph: { title: tag.name },
@@ -72,7 +69,7 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
   }
 
   // Otherwise it's a post
-  const post = Object.values(store.postMap).find((p) => p.slug === tagSlug);
+  const post = store.postBySlug[tagSlug];
   if (!post) {
     return { title: 'King Nitram' };
   }
@@ -99,7 +96,7 @@ const SlugPage = async ({ params }: SlugPageProps) => {
   const { store } = await getSiteData();
 
   // Check if the slug matches a tag
-  const tag = Object.values(store.tagMap).find((t) => t.slug === tagSlug);
+  const tag = store.tagBySlug[tagSlug];
   if (tag) {
     return <TagPageClient categorySlug={categorySlug} tagSlug={tagSlug} />;
   }

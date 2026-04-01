@@ -27,22 +27,28 @@ export function generateStore({
   posts: PostWithRelationships[];
   tags: TagWithRelationships[];
 }): Store {
-  const categoryMap = categories.reduce((acc, category) => {
-    acc[category.id] = category;
-    return acc;
-  }, {} as CategoryMap);
+  const categoryMap: CategoryMap = {};
+  const categoryBySlug: Record<string, Category> = {};
+  categories.forEach((category) => {
+    categoryMap[category.id] = category;
+    categoryBySlug[category.slug] = category;
+  });
 
-  const postMap = posts.reduce((acc, post) => {
-    acc[post.id] = post;
-    return acc;
-  }, {} as PostMap);
+  const postMap: PostMap = {};
+  const postBySlug: Record<string, PostWithRelationships> = {};
+  posts.forEach((post) => {
+    postMap[post.id] = post;
+    postBySlug[post.slug] = post;
+  });
 
-  const tagMap = tags.reduce((acc, tag) => {
-    acc[tag.id] = tag;
-    return acc;
-  }, {} as TagMap);
+  const tagMap: TagMap = {};
+  const tagBySlug: Record<string, TagWithRelationships> = {};
+  tags.forEach((tag) => {
+    tagMap[tag.id] = tag;
+    tagBySlug[tag.slug] = tag;
+  });
 
-  return { categoryMap, postMap, tagMap };
+  return { categoryBySlug, categoryMap, postBySlug, postMap, tagBySlug, tagMap };
 }
 
 // --- Site Scopes ---

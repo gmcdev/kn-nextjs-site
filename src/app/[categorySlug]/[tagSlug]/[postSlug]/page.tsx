@@ -1,4 +1,5 @@
 import { getSiteData } from '@/lib/data';
+import { stripHtml } from '@/utils/string';
 import type { Metadata } from 'next';
 
 import TagPageClient from '../TagPageClient';
@@ -35,15 +36,11 @@ export async function generateStaticParams() {
   return params;
 }
 
-const stripHtml = (html: string): string => {
-  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-};
-
 export async function generateMetadata({ params }: PostDeepLinkProps): Promise<Metadata> {
   const { postSlug } = await params;
   const { store } = await getSiteData();
 
-  const post = Object.values(store.postMap).find((p) => p.slug === postSlug);
+  const post = store.postBySlug[postSlug];
   if (!post) {
     return { title: 'King Nitram' };
   }

@@ -17,7 +17,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { categorySlug } = await params;
   const { store } = await getSiteData();
-  const category = Object.values(store.categoryMap).find((c) => c.slug === categorySlug);
+  const category = store.categoryBySlug[categorySlug];
 
   return {
     description: category ? `${category.name} — art and music by King Nitram` : undefined,

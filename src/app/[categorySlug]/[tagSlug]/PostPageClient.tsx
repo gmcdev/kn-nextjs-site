@@ -20,18 +20,13 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
   const { siteScopes, store } = useSiteData();
   const pageRef = useRef<HTMLDivElement>(null);
 
-  const post = useMemo(
-    () => Object.values(store.postMap).find((p) => p.slug === postSlug),
-    [postSlug, store.postMap],
-  );
+  const post = store.postBySlug[postSlug];
 
   const category = useMemo(() => {
     if (!post) {
       return null;
     }
-    return getLeafCategory(store, post) ??
-      Object.values(store.categoryMap).find((c) => c.slug === categorySlug) ??
-      null;
+    return getLeafCategory(store, post) ?? store.categoryBySlug[categorySlug];
   }, [categorySlug, post, store]);
 
   const scope = useMemo(() => {
