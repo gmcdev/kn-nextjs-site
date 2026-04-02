@@ -8,24 +8,39 @@ import type {
 const GRAPHQL_ENDPOINT = 'https://kingnitram.com/admin/graphql';
 const PAGE_SIZE = 100;
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+
 async function fetchGraphQL<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
-  const response = await fetch(GRAPHQL_ENDPOINT, {
-    body: JSON.stringify({ query, variables }),
-    headers: { 'Content-Type': 'application/json' },
-    method: 'POST',
-  });
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(GRAPHQL_ENDPOINT, {
+        body: JSON.stringify({ query, variables }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
 
-  if (!response.ok) {
-    throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const json = await response.json();
+
+      if (json.errors) {
+        throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
+      }
+
+      return json.data as T;
+    } catch (error) {
+      if (attempt < MAX_RETRIES) {
+        console.warn(`GraphQL fetch attempt ${attempt} failed, retrying in ${RETRY_DELAY_MS}ms...`, error);
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      } else {
+        throw error;
+      }
+    }
   }
-
-  const json = await response.json();
-
-  if (json.errors) {
-    throw new Error(`GraphQL errors: ${JSON.stringify(json.errors)}`);
-  }
-
-  return json.data as T;
+  throw new Error('Unreachable');
 }
 
 function isCdnFeaturedImage(value: unknown): value is CdnFeaturedImage {

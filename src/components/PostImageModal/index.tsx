@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import type { TouchEvent as ReactTouchEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import ArrowLeft from '@/icons/ArrowLeft';
@@ -21,7 +23,10 @@ import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
 
+const BASE_PATH = '/site';
+
 const PostImageModal = () => {
+  const router = useRouter();
   const { siteScopes, store } = useSiteData();
   const { close: closeModal, currentIndex, goToIndex, post, switchTag, tag } = useModalStore();
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
@@ -30,6 +35,17 @@ const PostImageModal = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isNavigatingRef = useRef(false);
+  const touchStartRef = useRef<{ x: number; atStart: boolean; atEnd: boolean; peakDelta: number } | null>(null);
+  const returnPathRef = useRef<string | null>(null);
+
+  // Capture the page pathname (without basePath) when the modal opens, before the
+  // URL-update effect changes it. Each boundary swipe zooms this out one level.
+  if (post && !returnPathRef.current) {
+    returnPathRef.current = window.location.pathname.replace(BASE_PATH, '');
+  }
+  if (!post) {
+    returnPathRef.current = null;
+  }
 
   const { currentTrack, isPlaying, pause: pauseAudio, play: playAudio, resume: resumeAudio } = useAudioStore();
 
@@ -53,17 +69,34 @@ const PostImageModal = () => {
     replaceUrl(path);
   }, [currentCategoryId, currentPost, store.categoryMap, tag]);
 
-  const close = useCallback(() => {
-    // Revert URL to /{categorySlug}/{tagSlug}
-    if (tag && currentCategoryId) {
-      const category = store.categoryMap[currentCategoryId];
-      if (category) {
-        const path = `/${category.slug}/${tag.slug}`;
-        replaceUrl(path);
-      }
+  // Keep the underlying page scrolled to the current tag as the modal navigates.
+  useEffect(() => {
+    if (!tag) {
+      return;
     }
+    const pageContainer = document.querySelector('.page-layout__page');
+    if (!pageContainer) {
+      return;
+    }
+    const tagElement = pageContainer.querySelector<HTMLElement>(`[data-tag-id="${tag.id}"]`);
+    if (!tagElement) {
+      return;
+    }
+    const containerTop = pageContainer.getBoundingClientRect().top;
+    const tagTop = tagElement.getBoundingClientRect().top;
+    pageContainer.scrollTo({
+      behavior: 'smooth',
+      top: pageContainer.scrollTop + (tagTop - containerTop),
+    });
+  }, [tag]);
+
+  const close = useCallback(() => {
+    const returnPath = returnPathRef.current;
     closeModal();
-  }, [closeModal, currentCategoryId, store.categoryMap, tag]);
+    if (returnPath) {
+      router.push(returnPath);
+    }
+  }, [closeModal, router]);
 
   const scrollToIndex = useCallback((index: number) => {
     const carousel = carouselRef.current;
@@ -113,6 +146,82 @@ const PostImageModal = () => {
     }
   }, [allTags, currentIndex, currentTagIndex, goToIndex, jumpToTag, postIds.length, scrollToIndex]);
 
+  // Shrink the return path one scope level so closing the modal lands on a broader view.
+  // /cat/tag/post → /cat/tag → /cat → /parentCat (if exists)
+  const zoomOutReturnPath = useCallback(() => {
+    const current = returnPathRef.current;
+    if (!current) {
+      return;
+    }
+    const segments = current.split('/').filter(Boolean);
+    if (segments.length >= 2) {
+      returnPathRef.current = `/${segments[0]}`;
+    } else if (segments.length === 1) {
+      const category = store.categoryBySlug[segments[0]];
+      if (category?.parentId) {
+        const parent = store.categoryMap[category.parentId];
+        if (parent) {
+          returnPathRef.current = `/${parent.slug}`;
+        }
+      }
+    }
+  }, [store.categoryBySlug, store.categoryMap]);
+
+  // Cooldown prevents rapid-fire boundary swipes from cascading through tags.
+  const boundaryCooldownRef = useRef(false);
+
+  // Boundary swipe: advance to the next/previous tag in the modal AND zoom out
+  // the return path so closing lands on the broader scope. At absolute boundaries
+  // (no more tags), close the modal and navigate to the zoomed scope.
+  // Entry index is chosen for swipe continuity: swiping left enters at the last
+  // post (continuing leftward), swiping right enters at the first post.
+  const handleBoundarySwipe = useCallback((direction: 'next' | 'previous') => {
+    if (boundaryCooldownRef.current) {
+      return;
+    }
+
+    const canAdvance = direction === 'previous'
+      ? currentTagIndex > 0
+      : currentTagIndex < allTags.length - 1;
+
+    zoomOutReturnPath();
+
+    // Block further boundary swipes during the transition.
+    boundaryCooldownRef.current = true;
+    wheelDeltaRef.current = 0;
+    setTimeout(() => {
+      boundaryCooldownRef.current = false;
+      if (carousel) {
+        carousel.style.overflowX = '';
+      }
+    }, 800);
+
+    // Suppress handleScroll and disable native carousel scrolling so that
+    // remaining momentum from the swipe gesture cannot scroll the new tag.
+    isNavigatingRef.current = true;
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    const carousel = carouselRef.current;
+    if (carousel) {
+      carousel.style.overflowX = 'hidden';
+    }
+
+    if (canAdvance) {
+      if (direction === 'previous') {
+        const previousTagEntry = allTags[currentTagIndex - 1];
+        jumpToTag(previousTagEntry, previousTagEntry.tag.postIds.length - 1);
+      } else {
+        const nextTagEntry = allTags[currentTagIndex + 1];
+        jumpToTag(nextTagEntry, 0);
+      }
+      // The scroll-to-initial effect ([post, tag] deps) handles positioning
+      // after the re-render via requestAnimationFrame.
+    } else {
+      close();
+    }
+  }, [allTags, close, currentTagIndex, jumpToTag, zoomOutReturnPath]);
+
   // Detect scroll-snap settling to sync currentIndex
   const handleScroll = useCallback(() => {
     if (isNavigatingRef.current) {
@@ -133,22 +242,110 @@ const PostImageModal = () => {
     }, 100);
   }, [currentIndex, goToIndex, postIds.length]);
 
-  // Scroll to initial position when modal opens
+  // Detect boundary swipes to navigate to previous/next tag.
+  // We track peak displacement during touchmove rather than relying on the
+  // touchend position, which can snap back due to scroll-container rubber-banding.
+  const handleTouchStart = useCallback((event: ReactTouchEvent) => {
+    const touch = event.touches[0];
+    touchStartRef.current = {
+      atEnd: currentIndex === postIds.length - 1,
+      atStart: currentIndex === 0,
+      peakDelta: 0,
+      x: touch.clientX,
+    };
+  }, [currentIndex, postIds.length]);
+
+  const handleTouchMove = useCallback((event: ReactTouchEvent) => {
+    const touchStart = touchStartRef.current;
+    if (!touchStart) {
+      return;
+    }
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - touchStart.x;
+    if (Math.abs(deltaX) > Math.abs(touchStart.peakDelta)) {
+      touchStart.peakDelta = deltaX;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const touchStart = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!touchStart) {
+      return;
+    }
+    const SWIPE_THRESHOLD = 80;
+
+    if (touchStart.atStart && touchStart.peakDelta > SWIPE_THRESHOLD) {
+      handleBoundarySwipe('previous');
+    } else if (touchStart.atEnd && touchStart.peakDelta < -SWIPE_THRESHOLD) {
+      handleBoundarySwipe('next');
+    }
+  }, [handleBoundarySwipe]);
+
+  // Detect boundary swipes from trackpad/Magic Mouse (wheel events, not touch).
+  // Accumulates horizontal scroll delta while at a boundary, resets after a pause.
+  const wheelDeltaRef = useRef(0);
+  const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!post || !carousel) {
+      return;
+    }
+
+    const SWIPE_THRESHOLD = 200;
+
+    const handleWheel = (event: WheelEvent) => {
+      const atStart = currentIndex === 0;
+      const atEnd = currentIndex === postIds.length - 1;
+      if (!atStart && !atEnd) {
+        wheelDeltaRef.current = 0;
+        return;
+      }
+
+      // Accumulate horizontal delta (positive = scroll right = next)
+      wheelDeltaRef.current += event.deltaX;
+
+      if (wheelTimeoutRef.current) {
+        clearTimeout(wheelTimeoutRef.current);
+      }
+      wheelTimeoutRef.current = setTimeout(() => {
+        wheelDeltaRef.current = 0;
+      }, 300);
+
+      if (atStart && wheelDeltaRef.current < -SWIPE_THRESHOLD) {
+        wheelDeltaRef.current = 0;
+        handleBoundarySwipe('previous');
+      } else if (atEnd && wheelDeltaRef.current > SWIPE_THRESHOLD) {
+        wheelDeltaRef.current = 0;
+        handleBoundarySwipe('next');
+      }
+    };
+
+    carousel.addEventListener('wheel', handleWheel, { passive: true });
+    return () => {
+      carousel.removeEventListener('wheel', handleWheel);
+      if (wheelTimeoutRef.current) {
+        clearTimeout(wheelTimeoutRef.current);
+      }
+    };
+  }, [currentIndex, handleBoundarySwipe, post, postIds.length]);
+
+  // Scroll to correct position when modal opens or tag switches.
   useEffect(() => {
     if (post && carouselRef.current) {
       const carousel = carouselRef.current;
-      // Wait for layout so clientWidth is accurate
       requestAnimationFrame(() => {
         if (carousel.clientWidth > 0) {
           isNavigatingRef.current = true;
           carousel.scrollLeft = currentIndex * carousel.clientWidth;
           setTimeout(() => {
             isNavigatingRef.current = false;
-          }, 100);
+          }, 500);
         }
       });
     }
-  }, [post, tag]); // Only on open, not on index change
+  }, [post, tag]); // Only on open or tag switch, not on index change
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -228,6 +425,9 @@ const PostImageModal = () => {
           className="post-image-modal__carousel"
           ref={carouselRef}
           onScroll={handleScroll}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
+          onTouchStart={handleTouchStart}
         >
           {postIds.map((postId, index) => {
             const carouselPost = store.postMap[postId];

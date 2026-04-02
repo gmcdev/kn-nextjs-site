@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { getRootCategory } from '@/lib/store';
 import type { Category, PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
+import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { SCROLL_COLLAPSE_THRESHOLD } from '@/utils/layout-constants';
 
@@ -23,6 +24,7 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
   const currentTagId = useNavigationStore((state) => state.currentTagId);
   const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
+  const openModal = useModalStore((state) => state.open);
 
   const hasScrolled = useRef(false);
   const [animClasses, setAnimClasses] = useState({ menu: '' });
@@ -105,7 +107,9 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
       <div key={`${category.id}-${tag.id}`} className="site-map__outline--tag">
         {isCurrent ? (
           <>
-            <div className="site-map__outline--tag-name-current">{tag.name}</div>
+            <TagAhref category={category} tag={tag}>
+              <div className="site-map__outline--tag-name-current">{tag.name}</div>
+            </TagAhref>
             <div className="site-map__outline--tag-posts">
               {tag.postIds.map((postId, tagPostsIdx) => {
                 const post = store.postMap[postId];
@@ -129,7 +133,10 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     const { srcSet } = post.cdnFeaturedImage ?? {};
     return (
       <div key={`${category.id}-${tag.id}-${post.id}`} className="site-map__outline--post">
-        <button onClick={() => updateTagSwipeMap(category, tag, post, tagPostsIdx)}>
+        <button onClick={() => {
+          updateTagSwipeMap(category, tag, post, tagPostsIdx);
+          openModal(post, tag);
+        }}>
           <div className="site-map__outline--post-inner">
             {srcSet ? (
               <img
