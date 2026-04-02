@@ -4,6 +4,7 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 
 import type { TagWithRelationships } from '@/lib/types';
 import useRefFunction from '@/hooks/useRefFunction';
+import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
 
 import Post from '../../Post';
@@ -18,6 +19,7 @@ type TagListProps = Readonly<{
 
 const TagList = ({ contentType, tag }: TagListProps) => {
   const { store } = useSiteData();
+  const openModal = useModalStore((state) => state.open);
   const { setTagSwipeFor, tagSwipeMap } = useNavigationStore();
   const nextPostIdx = tagSwipeMap[tag.id];
 
@@ -31,6 +33,29 @@ const TagList = ({ contentType, tag }: TagListProps) => {
     setScrollEnded(true);
   }, []);
   useIsScrolling(tagPostsElementRef, handleScrollEnd);
+
+  // Update the active dot as soon as the scroll crosses the midpoint of a slide.
+  const handleScroll = useCallback(() => {
+    const element = tagPostsElementRef.current;
+    if (!element || !swipeDimensions) {
+      return;
+    }
+    const nearestIndex = Math.round(element.scrollLeft / swipeDimensions.width);
+    if (nearestIndex !== currentPostIdxRef.current && nearestIndex >= 0 && nearestIndex < tag.postIds.length) {
+      setTagSwipeFor(tag.id, nearestIndex);
+    }
+  }, [setTagSwipeFor, swipeDimensions, tag]);
+
+  useEffect(() => {
+    const element = tagPostsElementRef.current;
+    if (!element) {
+      return;
+    }
+    element.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      element.removeEventListener('scroll', handleScroll);
+    };
+  }, [handleScroll]);
 
   const handleSetCurrentPost = useCallback(
     (nextPostIdx: number) => {
@@ -63,11 +88,16 @@ const TagList = ({ contentType, tag }: TagListProps) => {
       className={`tag-list__${contentType}-posts`}
       style={{ height: swipeDimensions?.height }}
     >
-      {tag.postIds.map((postId) => (
-        <div className={`tag-list__${contentType}-post`} key={postId}>
-          <Post post={store.postMap[postId]} />
-        </div>
-      ))}
+      {tag.postIds.map((postId) => {
+        const post = store.postMap[postId];
+        return (
+          <div className={`tag-list__${contentType}-post`} key={postId}>
+            <button className="tag-list__post-button" onClick={() => openModal(post, tag)}>
+              <Post post={post} />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 };

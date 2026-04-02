@@ -42,7 +42,6 @@
 
       &-link {
         border-top: unset;
-        min-width: 170px;
       }
 
       &-post {
@@ -58,14 +57,16 @@
       }
     }
 
-    &--half {
-      width: 50%;
+    &--middle {
+      align-items: center;
       display: flex;
-      justify-content: space-between;
+      flex: 1;
+      justify-content: center;
+
+      @media screen and (max-width: 968px) {
+        flex-direction: column;
+      }
     }
-  }
-  &__relatives {
-    display: flex;
   }
 
   @media screen and (max-width: 968px) {

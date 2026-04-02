@@ -90,40 +90,36 @@ const FooterNavigation = ({ categorySlug }: FooterNavigationProps) => {
         ) : null}
       </div>
       <div className="footer-navigation__newer-older--lower">
-        <div className="footer-navigation__newer-older--half">
-          {olderScope ? (
-            <CategoryAhref category={olderScope.category}>
-              <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-tag footer-navigation__round-lower-right">
-                &lt; {olderScope.category.name}
+        {newerScope ? (
+          <CategoryAhref category={newerScope.category}>
+            <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-tag footer-navigation__round-lower-right">
+              &lt; {newerScope.category.name}
+            </div>
+          </CategoryAhref>
+        ) : null}
+        <div className="footer-navigation__newer-older--middle">
+          {tagNeighbors.previous ? (
+            <TagAhref category={tagNeighbors.previous.category} tag={tagNeighbors.previous.tag}>
+              <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-post">
+                {tagNeighbors.previous.tag.name}
               </div>
-            </CategoryAhref>
+            </TagAhref>
           ) : null}
           {tagNeighbors.next ? (
             <TagAhref category={tagNeighbors.next.category} tag={tagNeighbors.next.tag}>
-              <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-post footer-navigation__round-lower-left">
+              <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-post">
                 {tagNeighbors.next.tag.name}
               </div>
             </TagAhref>
           ) : null}
         </div>
-        <div className="footer-navigation__newer-older--half">
-          <div className="footer-navigation__relatives">
-            {tagNeighbors.previous ? (
-              <TagAhref category={tagNeighbors.previous.category} tag={tagNeighbors.previous.tag}>
-                <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-post footer-navigation__round-lower-right">
-                  {tagNeighbors.previous.tag.name}
-                </div>
-              </TagAhref>
-            ) : null}
-          </div>
-          {newerScope ? (
-            <CategoryAhref category={newerScope.category}>
-              <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-tag-right footer-navigation__round-lower-left">
-                {newerScope.category.name} &gt;
-              </div>
-            </CategoryAhref>
-          ) : null}
-        </div>
+        {olderScope ? (
+          <CategoryAhref category={olderScope.category}>
+            <div className="footer-navigation__newer-older--link footer-navigation__newer-older--lower-link footer-navigation__newer-older--lower-tag-right footer-navigation__round-lower-left">
+              {olderScope.category.name} &gt;
+            </div>
+          </CategoryAhref>
+        ) : null}
       </div>
     </div>
   );

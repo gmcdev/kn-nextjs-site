@@ -74,7 +74,9 @@
 
   &__nav-dots {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--spacing-2);
+    justify-content: center;
     margin: 0 var(--spacing-2);
   }
 

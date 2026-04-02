@@ -150,6 +150,10 @@ const PostImageModal = () => {
       ? targetEntry.tag.postIds.length - 1
       : 0;
 
+    // Suppress handleScroll so the scroll-snap reset to 0 during re-render
+    // doesn't override the target index.
+    isNavigatingRef.current = true;
+
     jumpToTag(targetEntry, startIndex);
 
     const category = store.categoryMap[targetEntry.categoryId];
@@ -205,7 +209,7 @@ const PostImageModal = () => {
     if (!touchStart) {
       return;
     }
-    const SWIPE_THRESHOLD = 80;
+    const SWIPE_THRESHOLD = 240;
 
     if (touchStart.atStart && touchStart.peakDelta > SWIPE_THRESHOLD) {
       handleBoundarySwipe('previous');
@@ -225,7 +229,7 @@ const PostImageModal = () => {
       return;
     }
 
-    const SWIPE_THRESHOLD = 200;
+    const SWIPE_THRESHOLD = 500;
 
     const handleWheel = (event: WheelEvent) => {
       const atStart = currentIndex === 0;
