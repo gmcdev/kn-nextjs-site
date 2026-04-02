@@ -23,8 +23,6 @@ import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
 
-const BASE_PATH = '/site';
-
 const PostImageModal = () => {
   const router = useRouter();
   const { siteScopes, store } = useSiteData();
@@ -33,19 +31,8 @@ const PostImageModal = () => {
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isNavigatingRef = useRef(false);
   const touchStartRef = useRef<{ x: number; atStart: boolean; atEnd: boolean; peakDelta: number } | null>(null);
-  const returnPathRef = useRef<string | null>(null);
-
-  // Capture the page pathname (without basePath) when the modal opens, before the
-  // URL-update effect changes it. Each boundary swipe zooms this out one level.
-  if (post && !returnPathRef.current) {
-    returnPathRef.current = window.location.pathname.replace(BASE_PATH, '');
-  }
-  if (!post) {
-    returnPathRef.current = null;
-  }
 
   const { currentTrack, isPlaying, pause: pauseAudio, play: playAudio, resume: resumeAudio } = useAudioStore();
 
@@ -91,12 +78,14 @@ const PostImageModal = () => {
   }, [tag]);
 
   const close = useCallback(() => {
-    const returnPath = returnPathRef.current;
-    closeModal();
-    if (returnPath) {
-      router.push(returnPath);
+    if (tag && currentCategoryId) {
+      const category = store.categoryMap[currentCategoryId];
+      if (category) {
+        router.push(`/${category.slug}/${tag.slug}`);
+      }
     }
-  }, [closeModal, router]);
+    closeModal();
+  }, [closeModal, currentCategoryId, router, store.categoryMap, tag]);
 
   const scrollToIndex = useCallback((index: number) => {
     const carousel = carouselRef.current;
@@ -146,100 +135,43 @@ const PostImageModal = () => {
     }
   }, [allTags, currentIndex, currentTagIndex, goToIndex, jumpToTag, postIds.length, scrollToIndex]);
 
-  // Shrink the return path one scope level so closing the modal lands on a broader view.
-  // /cat/tag/post → /cat/tag → /cat → /parentCat (if exists)
-  const zoomOutReturnPath = useCallback(() => {
-    const current = returnPathRef.current;
-    if (!current) {
-      return;
-    }
-    const segments = current.split('/').filter(Boolean);
-    if (segments.length >= 2) {
-      returnPathRef.current = `/${segments[0]}`;
-    } else if (segments.length === 1) {
-      const category = store.categoryBySlug[segments[0]];
-      if (category?.parentId) {
-        const parent = store.categoryMap[category.parentId];
-        if (parent) {
-          returnPathRef.current = `/${parent.slug}`;
-        }
-      }
-    }
-  }, [store.categoryBySlug, store.categoryMap]);
-
-  // Cooldown prevents rapid-fire boundary swipes from cascading through tags.
-  const boundaryCooldownRef = useRef(false);
-
-  // Boundary swipe: advance to the next/previous tag in the modal AND zoom out
-  // the return path so closing lands on the broader scope. At absolute boundaries
-  // (no more tags), close the modal and navigate to the zoomed scope.
-  // Entry index is chosen for swipe continuity: swiping left enters at the last
-  // post (continuing leftward), swiping right enters at the first post.
+  // Boundary swipe: advance to the adjacent tag in the modal and navigate the
+  // underlying page to that tag's route.
   const handleBoundarySwipe = useCallback((direction: 'next' | 'previous') => {
-    if (boundaryCooldownRef.current) {
+    const targetEntry = direction === 'previous'
+      ? currentTagIndex > 0 ? allTags[currentTagIndex - 1] : null
+      : currentTagIndex < allTags.length - 1 ? allTags[currentTagIndex + 1] : null;
+
+    if (!targetEntry) {
       return;
     }
 
-    const canAdvance = direction === 'previous'
-      ? currentTagIndex > 0
-      : currentTagIndex < allTags.length - 1;
+    const startIndex = direction === 'previous'
+      ? targetEntry.tag.postIds.length - 1
+      : 0;
 
-    zoomOutReturnPath();
+    jumpToTag(targetEntry, startIndex);
 
-    // Block further boundary swipes during the transition.
-    boundaryCooldownRef.current = true;
-    wheelDeltaRef.current = 0;
-    setTimeout(() => {
-      boundaryCooldownRef.current = false;
-      if (carousel) {
-        carousel.style.overflowX = '';
-      }
-    }, 800);
-
-    // Suppress handleScroll and disable native carousel scrolling so that
-    // remaining momentum from the swipe gesture cannot scroll the new tag.
-    isNavigatingRef.current = true;
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+    const category = store.categoryMap[targetEntry.categoryId];
+    if (category) {
+      router.push(`/${category.slug}/${targetEntry.tag.slug}`);
     }
-    const carousel = carouselRef.current;
-    if (carousel) {
-      carousel.style.overflowX = 'hidden';
-    }
+  }, [allTags, currentTagIndex, jumpToTag, router, store.categoryMap]);
 
-    if (canAdvance) {
-      if (direction === 'previous') {
-        const previousTagEntry = allTags[currentTagIndex - 1];
-        jumpToTag(previousTagEntry, previousTagEntry.tag.postIds.length - 1);
-      } else {
-        const nextTagEntry = allTags[currentTagIndex + 1];
-        jumpToTag(nextTagEntry, 0);
-      }
-      // The scroll-to-initial effect ([post, tag] deps) handles positioning
-      // after the re-render via requestAnimationFrame.
-    } else {
-      close();
-    }
-  }, [allTags, close, currentTagIndex, jumpToTag, zoomOutReturnPath]);
-
-  // Detect scroll-snap settling to sync currentIndex
+  // Sync currentIndex to scroll position as the user swipes. Uses the nearest
+  // snap point so the dot updates as soon as the scroll crosses the midpoint.
   const handleScroll = useCallback(() => {
     if (isNavigatingRef.current) {
       return;
     }
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+    const carousel = carouselRef.current;
+    if (!carousel || carousel.clientWidth === 0) {
+      return;
     }
-    scrollTimeoutRef.current = setTimeout(() => {
-      const carousel = carouselRef.current;
-      if (!carousel || carousel.clientWidth === 0) {
-        return;
-      }
-      const nextIndex = Math.round(carousel.scrollLeft / carousel.clientWidth);
-      if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < postIds.length) {
-        goToIndex(nextIndex);
-      }
-    }, 100);
+    const nextIndex = Math.round(carousel.scrollLeft / carousel.clientWidth);
+    if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < postIds.length) {
+      goToIndex(nextIndex);
+    }
   }, [currentIndex, goToIndex, postIds.length]);
 
   // Detect boundary swipes to navigate to previous/next tag.

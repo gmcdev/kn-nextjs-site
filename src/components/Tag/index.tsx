@@ -2,6 +2,8 @@
 
 import type { PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
 
+import useModalStore from '@/stores/useModalStore';
+
 import Breadcrumbs from '../Breadcrumbs';
 import TagAhref from '../Breadcrumbs/TagAhref';
 import Post from '../Post';
@@ -28,6 +30,7 @@ type TagProps = Readonly<{
 const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
   const { store } = useSiteData();
   const mediaSize = useMediaSize();
+  const openModal = useModalStore((state) => state.open);
 
   const isMusicCategory = rootCategorySlug === 'music';
   const displayMode: DisplayMode = isMusicCategory
@@ -38,6 +41,13 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
   if (post) {
     const postContentType = post.postMeta.contentType;
     const postTag = store.tagMap[post.tagIds[0]];
+
+    const handlePostClick = () => {
+      if (postTag) {
+        openModal(post, postTag);
+      }
+    };
+
     return (
       <div className="tag" key={postTag?.id}>
         <div className="tag__header">
@@ -48,7 +58,9 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
         </div>
         <div className={`tag__${postContentType}-posts`}>
           <div className={`tag__${postContentType}-post`} key={post.id}>
-            <Post post={post} />
+            <button className="tag__post-button" onClick={handlePostClick}>
+              <Post post={post} />
+            </button>
           </div>
         </div>
       </div>

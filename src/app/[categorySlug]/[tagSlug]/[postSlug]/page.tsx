@@ -2,7 +2,7 @@ import { getSiteData } from '@/lib/data';
 import { stripHtml } from '@/utils/string';
 import type { Metadata } from 'next';
 
-import TagPageClient from '../TagPageClient';
+import PostPageClient from '../PostPageClient';
 
 type PostDeepLinkProps = Readonly<{
   params: Promise<{ categorySlug: string; postSlug: string; tagSlug: string }>;
@@ -63,14 +63,8 @@ export async function generateMetadata({ params }: PostDeepLinkProps): Promise<M
 }
 
 const PostDeepLinkPage = async ({ params }: PostDeepLinkProps) => {
-  const { categorySlug, postSlug, tagSlug } = await params;
-  return (
-    <TagPageClient
-      categorySlug={categorySlug}
-      initialPostSlug={postSlug}
-      tagSlug={tagSlug}
-    />
-  );
+  const { categorySlug, postSlug } = await params;
+  return <PostPageClient categorySlug={categorySlug} postSlug={postSlug} />;
 };
 
 export default PostDeepLinkPage;
