@@ -10,5 +10,8 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 
+# wordpress cache
+.wp-cache.json
+
 # deploy
 deploy-settings.json

@@ -30,16 +30,26 @@
     &--left {
       background: none;
       border: none;
-      padding: 0;
-      margin-left: var(--spacing-1);
       cursor: pointer;
+      margin-left: var(--spacing-1);
+      padding: 0;
+
+      & svg {
+        height: 24px;
+        width: 24px;
+      }
     }
 
     &--right {
       background: none;
       border: none;
-      padding: 0;
       cursor: pointer;
+      padding: 0;
+
+      & svg {
+        height: 24px;
+        width: 24px;
+      }
     }
 
     &--inactive {
@@ -49,7 +59,9 @@
 
     &--posts {
       display: flex;
+      flex-wrap: wrap;
       gap: var(--spacing-2);
+      justify-content: center;
       margin: 0 var(--spacing-4);
     }
 
@@ -68,8 +80,9 @@
     }
   }
   @media screen and (max-width: 968px) {
-    &__nav {
-      transform: scale(0.75);
+    &__nav--posts svg {
+      height: 12px;
+      width: 12px;
     }
   }
 

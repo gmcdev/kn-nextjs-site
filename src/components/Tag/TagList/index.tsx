@@ -42,6 +42,8 @@ const TagList = ({ contentType, tag }: TagListProps) => {
     }
     const nearestIndex = Math.round(element.scrollLeft / swipeDimensions.width);
     if (nearestIndex !== currentPostIdxRef.current && nearestIndex >= 0 && nearestIndex < tag.postIds.length) {
+      // Update the ref so the programmatic-scroll effect doesn't fight native scroll.
+      currentPostIdxRef.current = nearestIndex;
       setTagSwipeFor(tag.id, nearestIndex);
     }
   }, [setTagSwipeFor, swipeDimensions, tag]);
@@ -92,9 +94,13 @@ const TagList = ({ contentType, tag }: TagListProps) => {
         const post = store.postMap[postId];
         return (
           <div className={`tag-list__${contentType}-post`} key={postId}>
-            <button className="tag-list__post-button" onClick={() => openModal(post, tag)}>
+            {contentType === 'audio' ? (
               <Post post={post} />
-            </button>
+            ) : (
+              <button className="tag-list__post-button" onClick={() => openModal(post, tag)}>
+                <Post post={post} />
+              </button>
+            )}
           </div>
         );
       })}
