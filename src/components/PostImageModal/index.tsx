@@ -217,7 +217,7 @@ const PostImageModal = () => {
     if (!touchStart) {
       return;
     }
-    const SWIPE_THRESHOLD = 240;
+    const SWIPE_THRESHOLD = 180;
 
     if (touchStart.atStart && touchStart.peakDelta > SWIPE_THRESHOLD) {
       handleBoundarySwipe('previous');

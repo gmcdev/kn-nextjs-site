@@ -1,8 +1,10 @@
 'use client';
 
+import { useCallback, useState } from 'react';
 import type { PropsWithChildren, RefObject } from 'react';
 
 import Header from '../Header';
+import MobileDrawer from '../MobileDrawer';
 import SiteMap from '../SiteMap';
 
 import './style.scss';
@@ -12,9 +14,19 @@ type PageLayoutProps = Readonly<PropsWithChildren<{
 }>>;
 
 const PageLayout = ({ children, pageRef }: PageLayoutProps) => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const openDrawer = useCallback(() => {
+    setDrawerOpen(true);
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false);
+  }, []);
+
   return (
     <div className="page-layout">
-      <Header pageRef={pageRef} />
+      <Header pageRef={pageRef} onMenuOpen={openDrawer} />
       <main className="page-layout__main">
         <SiteMap pageRef={pageRef} />
         <div className="page-layout__page" ref={pageRef}>
@@ -25,6 +37,7 @@ const PageLayout = ({ children, pageRef }: PageLayoutProps) => {
         </div>
         <div className="page-layout__scroll-shadow-bottom" />
       </main>
+      <MobileDrawer isOpen={drawerOpen} onClose={closeDrawer} />
     </div>
   );
 };

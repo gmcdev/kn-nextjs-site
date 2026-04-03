@@ -12,10 +12,11 @@ import { useSiteData } from '../SiteDataProvider';
 import './style.scss';
 
 type HeaderProps = Readonly<{
+  onMenuOpen: () => void;
   pageRef: RefObject<HTMLDivElement | null>;
 }>;
 
-const Header = ({ pageRef }: HeaderProps) => {
+const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
   const { store } = useSiteData();
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
 
@@ -85,6 +86,17 @@ const Header = ({ pageRef }: HeaderProps) => {
           alt="King Nitram & the Merry Universe"
           style={{ height: 40, width: 217 }}
         />
+        <button
+          aria-label="Open navigation"
+          className="header__menu-button"
+          onClick={onMenuOpen}
+        >
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <rect x="3" y="5" width="18" height="2" rx="1" />
+            <rect x="3" y="11" width="18" height="2" rx="1" />
+            <rect x="3" y="17" width="18" height="2" rx="1" />
+          </svg>
+        </button>
       </div>
       <div className="header__top-nav">
         <menu className="header__top-nav__menu">
