@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 4200",
-    "build": "next build",
-    "build:fresh": "WP_FRESH=1 next build",
-    "build:test": "WP_CATEGORY=cars next build",
+    "build": "next build && node dev-ops/generate-sitemap.mjs",
+    "build:fresh": "WP_FRESH=1 next build && node dev-ops/generate-sitemap.mjs",
+    "build:test": "WP_CATEGORY=cars next build && node dev-ops/generate-sitemap.mjs",
     "deploy": "node dev-ops/deploy-bluehost/index.mjs -c deploy",
     "build-and-deploy": "npm run build && npm run deploy"
   },
