@@ -18,7 +18,7 @@ The previous Gatsby project lives at `../kn-wp-site` — reference it for existi
 - **Audio**: WaveSurfer.js
 - **Data**: WordPress GraphQL (fetched at build time)
 - **Deploy**: Static export → rsync to Bluehost /public_html/site
-- **htaccess**: `public/.htaccess` must be placed in `/public_html` on Bluehost (the domain root, not `/public_html/site`). It handles clean URL rewrites, the root redirect to `/site/music`, and PHP handler config.
+- **htaccess**: `public/.htaccess` handles clean URL rewrites for the site directory and is deployed to `/public_html/site/` via the build. The domain-root `.htaccess` in `/public_html/` (redirect to /site/music, WordPress auth, PHP handler) is managed separately on the server.
 
 ## Architecture
 

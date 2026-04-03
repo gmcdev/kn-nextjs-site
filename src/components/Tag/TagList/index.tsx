@@ -20,8 +20,8 @@ type TagListProps = Readonly<{
 const TagList = ({ contentType, tag }: TagListProps) => {
   const { store } = useSiteData();
   const openModal = useModalStore((state) => state.open);
-  const { setTagSwipeFor, tagSwipeMap } = useNavigationStore();
-  const nextPostIdx = tagSwipeMap[tag.id];
+  const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
+  const nextPostIdx = useNavigationStore((state) => state.tagSwipeMap[tag.id]);
 
   const tagPostsElementRef = useRef<HTMLDivElement>(null);
   const swipeDimensions = useSwipeDimensions(tagPostsElementRef);

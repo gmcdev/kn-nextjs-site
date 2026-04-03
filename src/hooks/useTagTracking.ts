@@ -1,6 +1,6 @@
 'use client';
 
-import { type RefObject, useCallback, useEffect } from 'react';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 
 import type { Store } from '@/lib/types';
 import useNavigationStore from '@/stores/useNavigationStore';
@@ -11,6 +11,7 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
   const activateScroll = useNavigationStore((state) => state.activateScroll);
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
+  const lastUrlUpdateRef = useRef<string | null>(null);
 
   // Activate scroll tracking on real user interaction (not layout-induced scroll)
   // Re-attach activation listeners whenever scrollActivated resets to false
@@ -91,13 +92,17 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
           const path = tag
             ? `/${category.slug}/${tag.slug}`
             : `/${category.slug}`;
-          replaceUrl(path);
+          if (path !== lastUrlUpdateRef.current) {
+            lastUrlUpdateRef.current = path;
+            replaceUrl(path);
+          }
         }
       }
     }
   }, [pageRef, setCurrentCategoryId, setCurrentTagId, store]);
 
-  // Listen for scroll events after user interaction activates tracking
+  // Listen for scroll events after user interaction activates tracking.
+  // Throttled via rAF to avoid expensive DOM queries on every scroll event.
   useEffect(() => {
     if (!scrollActivated) {
       return;
@@ -108,14 +113,24 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
       return;
     }
 
+    let rafId: number | null = null;
+
     const handleScroll = () => {
-      updateCurrentTag();
+      if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          updateCurrentTag();
+          rafId = null;
+        });
+      }
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       container.removeEventListener('scroll', handleScroll);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, [pageRef, scrollActivated, updateCurrentTag]);
 };

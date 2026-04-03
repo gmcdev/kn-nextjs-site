@@ -12,8 +12,8 @@ type TagNavigationProps = Readonly<{
 }>;
 
 const TagNavigation = ({ contentType, tag }: TagNavigationProps) => {
-  const { setTagSwipeFor, tagSwipeMap } = useNavigationStore();
-  const currentPostIdx = tagSwipeMap[tag.id] ?? 0;
+  const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
+  const currentPostIdx = useNavigationStore((state) => state.tagSwipeMap[tag.id] ?? 0);
 
   const handlePostClick = (postIdx: number) => {
     setTagSwipeFor(tag.id, postIdx);

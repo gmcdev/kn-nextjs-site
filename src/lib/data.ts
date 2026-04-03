@@ -63,6 +63,22 @@ export async function getSiteData(): Promise<{ siteScopes: SiteData[]; store: St
     writeCache({ categories, posts, tags });
   }
 
+  const categoryFilter = process.env.WP_CATEGORY;
+  if (categoryFilter) {
+    const rootCategory = categories.find((c) => c.slug === categoryFilter);
+    if (rootCategory) {
+      const rootId = rootCategory.id;
+      categories = categories.filter((c) => c.id === rootId || c.parentId === rootId);
+      const categoryIds = new Set(categories.map((c) => c.id));
+      posts = posts.filter((p) => p.categoryIds.some((id) => categoryIds.has(id)));
+      const postIds = new Set(posts.map((p) => p.id));
+      tags = tags.filter((t) => t.postIds.some((id) => postIds.has(id)));
+      console.log(
+        `Filtered to "${categoryFilter}": ${categories.length} categories, ${tags.length} tags, ${posts.length} posts`,
+      );
+    }
+  }
+
   const store = generateStore({ categories, posts, tags });
   const siteScopes = orderSiteScopes(store, buildSiteScopes(store, tags));
 

@@ -26,15 +26,23 @@ import './style.scss';
 const PostImageModal = () => {
   const router = useRouter();
   const { siteScopes, store } = useSiteData();
-  const { close: closeModal, currentIndex, goToIndex, post, switchTag, tag } = useModalStore();
+  const closeModal = useModalStore((state) => state.close);
+  const currentIndex = useModalStore((state) => state.currentIndex);
+  const goToIndex = useModalStore((state) => state.goToIndex);
+  const post = useModalStore((state) => state.post);
+  const switchTag = useModalStore((state) => state.switchTag);
+  const tag = useModalStore((state) => state.tag);
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
+  const currentTrack = useAudioStore((state) => state.currentTrack);
+  const isPlaying = useAudioStore((state) => state.isPlaying);
+  const pauseAudio = useAudioStore((state) => state.pause);
+  const playAudio = useAudioStore((state) => state.play);
+  const resumeAudio = useAudioStore((state) => state.resume);
   const carouselRef = useRef<HTMLDivElement>(null);
   const isNavigatingRef = useRef(false);
   const touchStartRef = useRef<{ x: number; atStart: boolean; atEnd: boolean; peakDelta: number } | null>(null);
-
-  const { currentTrack, isPlaying, pause: pauseAudio, play: playAudio, resume: resumeAudio } = useAudioStore();
 
   const postIds = tag?.postIds ?? [];
   const currentPost = postIds[currentIndex] ? store.postMap[postIds[currentIndex]] : post;

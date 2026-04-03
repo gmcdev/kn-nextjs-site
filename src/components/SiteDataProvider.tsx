@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import type { PropsWithChildren } from 'react';
 
 import type { SiteData, Store } from '@/lib/types';
@@ -15,8 +15,9 @@ const SiteDataContext = createContext<SiteDataContextValue | null>(null);
 type SiteDataProviderProps = Readonly<PropsWithChildren<SiteDataContextValue>>;
 
 const SiteDataProvider = ({ children, siteScopes, store }: SiteDataProviderProps) => {
+  const value = useMemo(() => ({ siteScopes, store }), [siteScopes, store]);
   return (
-    <SiteDataContext.Provider value={{ siteScopes, store }}>
+    <SiteDataContext.Provider value={value}>
       {children}
     </SiteDataContext.Provider>
   );

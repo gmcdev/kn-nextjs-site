@@ -20,7 +20,11 @@ type AudioPostProps = Readonly<{
 
 const AudioPost = ({ post }: AudioPostProps) => {
   const { store } = useSiteData();
-  const { currentTrack, isPlaying, pause, play, resume } = useAudioStore();
+  const currentTrack = useAudioStore((state) => state.currentTrack);
+  const isPlaying = useAudioStore((state) => state.isPlaying);
+  const pause = useAudioStore((state) => state.pause);
+  const play = useAudioStore((state) => state.play);
+  const resume = useAudioStore((state) => state.resume);
   const openModal = useModalStore((state) => state.open);
 
   const audioRequest = useMemo(() => buildAudioTrack(store, post), [post, store]);

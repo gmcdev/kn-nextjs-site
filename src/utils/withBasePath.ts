@@ -10,5 +10,8 @@ const withBasePath = (path: string): string => {
 export default withBasePath;
 
 export const replaceUrl = (path: string): void => {
-  window.history.replaceState({}, '', `${window.location.origin}${withBasePath(path)}`);
+  const url = `${window.location.origin}${withBasePath(path)}`;
+  if (url !== window.location.href) {
+    window.history.replaceState({}, '', url);
+  }
 };

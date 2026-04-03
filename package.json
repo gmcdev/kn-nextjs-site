@@ -6,6 +6,7 @@
     "dev": "next dev --port 4200",
     "build": "next build",
     "build:fresh": "WP_FRESH=1 next build",
+    "build:test": "WP_CATEGORY=cars next build",
     "deploy": "node dev-ops/deploy-bluehost/index.mjs -c deploy",
     "build-and-deploy": "npm run build && npm run deploy"
   },

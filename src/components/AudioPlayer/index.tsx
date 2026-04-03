@@ -21,7 +21,13 @@ import './style.scss';
 const AudioPlayer = () => {
   const router = useRouter();
   const { siteScopes, store } = useSiteData();
-  const { currentTrack, isPlaying, pause, play, resume, setIsPlaying, setWaveSurfer } = useAudioStore();
+  const currentTrack = useAudioStore((state) => state.currentTrack);
+  const isPlaying = useAudioStore((state) => state.isPlaying);
+  const pause = useAudioStore((state) => state.pause);
+  const play = useAudioStore((state) => state.play);
+  const resume = useAudioStore((state) => state.resume);
+  const setIsPlaying = useAudioStore((state) => state.setIsPlaying);
+  const setWaveSurfer = useAudioStore((state) => state.setWaveSurfer);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
 
