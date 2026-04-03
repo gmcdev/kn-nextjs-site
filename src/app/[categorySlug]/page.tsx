@@ -19,9 +19,19 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const { store } = await getSiteData();
   const category = store.categoryBySlug[categorySlug];
 
+  const description = category ? `${category.name} — art and music by King Nitram` : undefined;
+
+  const firstPostWithImage = category?.postIds
+    .map((id) => store.postMap[id])
+    .find((post) => post?.cdnFeaturedImage);
+
   return {
-    description: category ? `${category.name} — art and music by King Nitram` : undefined,
+    description,
     openGraph: {
+      description,
+      images: firstPostWithImage?.cdnFeaturedImage
+        ? [{ alt: firstPostWithImage.cdnFeaturedImage.altText, url: firstPostWithImage.cdnFeaturedImage.sourceUrl }]
+        : undefined,
       title: category?.name,
     },
     title: category?.name ?? 'King Nitram',

@@ -81,6 +81,7 @@ export async function generateMetadata({ params }: SlugPageProps): Promise<Metad
   return {
     description,
     openGraph: {
+      description,
       images: post.cdnFeaturedImage
         ? [{ alt: post.cdnFeaturedImage.altText, url: post.cdnFeaturedImage.sourceUrl }]
         : undefined,

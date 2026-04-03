@@ -54,7 +54,7 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
           <div className="tag__header-breadcrumbs">
             <Breadcrumbs store={store} post={post} />
           </div>
-          <div className="tag__header-name-inactive">{postTag?.name}</div>
+          <h2 className="tag__header-name-inactive">{postTag?.name}</h2>
         </div>
         <div className={`tag__${postContentType}-posts`}>
           <div className={`tag__${postContentType}-post`} key={post.id}>
@@ -86,7 +86,7 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
           <Breadcrumbs store={store} post={tagPost} />
         </div>
         <TagAhref category={scope.category} tag={tag}>
-          <div className="tag__header-name">{tag.name}</div>
+          <h2 className="tag__header-name">{tag.name}</h2>
         </TagAhref>
         {displayMode === 'list' ? (
           <TagNavigation contentType={contentType} tag={tag} />

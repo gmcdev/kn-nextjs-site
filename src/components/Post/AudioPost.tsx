@@ -54,22 +54,29 @@ const AudioPost = ({ post }: AudioPostProps) => {
   };
 
   return (
-    <div
+    <article
       className={`post__audio ${isSelected ? 'post__audio--selected' : ''}`}
+      itemScope
+      itemType="http://schema.org/MusicRecording"
     >
       {audioRequest.thumb ? (
         <button
           aria-label="View artwork"
           className="post__audio--thumbnail"
-          style={{ backgroundImage: `url(${CDN_URL}${audioRequest.thumb})` }}
           onClick={handleThumbnailClick}
-        />
+        >
+          <img
+            alt={post.title || 'Track artwork'}
+            className="post__audio--thumbnail-image"
+            src={`${CDN_URL}${audioRequest.thumb}`}
+          />
+        </button>
       ) : null}
 
       <button className="post__audio--player" onClick={handleAudioClick}>
-        <div itemProp="headline" className="post__audio--headline">
+        <h1 itemProp="name" className="post__audio--headline">
           {post.title ? parse(post.title) : null}
-        </div>
+        </h1>
         <div className="post__audio--date">{post.postMeta.creationDate}</div>
       </button>
 
@@ -80,7 +87,7 @@ const AudioPost = ({ post }: AudioPostProps) => {
       >
         {isCurrentlyPlaying ? <PauseIcon /> : <PlayIcon />}
       </button>
-    </div>
+    </article>
   );
 };
 

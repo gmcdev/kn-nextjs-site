@@ -16,9 +16,9 @@ const DefaultPost = ({ post }: DefaultPostProps) => {
       itemType="http://schema.org/Article"
     >
       <div className="post__default__header">
-        <div itemProp="headline" className="post__default--headline">
+        <h1 itemProp="headline" className="post__default--headline">
           {post.title ? parse(post.title) : null}
-        </div>
+        </h1>
         <div className="post__default--date">{post.postMeta.creationDate}</div>
       </div>
 
