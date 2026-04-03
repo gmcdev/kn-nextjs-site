@@ -11,10 +11,10 @@ import * as sshManager from './ssh-manager.mjs'
 const argv = yargs(hideBin(process.argv)).argv
 
 const cmd = argv.c
-const deployHost = argv.h
-const deployUser = argv.u
-const sshKeyName = argv.k
-const sshPort = argv.s
+const deployHost = argv.h || process.env.DEPLOY_HOST || 'kingnitram.com'
+const deployUser = argv.u || process.env.DEPLOY_USER || 'kingnitr'
+const sshKeyName = argv.k || process.env.SSH_KEY_NAME || 'id_mba'
+const sshPort = argv.s || process.env.SSH_PORT || '22'
 
 async function deploy() {
   console.time('deploy')

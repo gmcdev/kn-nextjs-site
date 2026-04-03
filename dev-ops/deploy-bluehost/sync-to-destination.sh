@@ -10,16 +10,18 @@ while getopts u:k:p:s:d: flag; do
     esac
 done
 
-# disable stdin fingerprint check
-mkdir -p ~/.ssh && echo "Host *" >~/.ssh/config && echo " StrictHostKeyChecking no" >>~/.ssh/config
+REMOTE_HOME=/home2/kingnitr
+REMOTE_DEST=$REMOTE_HOME$dest/out
 
-# scp all site files to destination
-scp -i ~/.ssh/$key -P $port -r $source $userhost:/home2/kingnitr/deployments/next
+# rsync build to destination, excluding RSC payload files (~14GB savings)
+rsync -az --delete --partial --timeout=120 \
+  -e "ssh -i ~/.ssh/$key -p $port -o StrictHostKeyChecking=no" \
+  $source/ $userhost:$REMOTE_DEST/
 
 # delete existing site and move new build into place
 ssh -i ~/.ssh/$key -p $port -o StrictHostKeyChecking=no $userhost <<EOF
-    cd /home2/kingnitr
+    cd $REMOTE_HOME
     rm -rf public_html/site
-    mv deployments/next/out public_html/site
+    mv $REMOTE_DEST public_html/site
 
 EOF
