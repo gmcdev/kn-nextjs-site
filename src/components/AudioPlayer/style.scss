@@ -141,23 +141,27 @@
   // =====================
   @media screen and (max-width: 968px) {
     border-top: 2px solid var(--color-audio-border);
+    transition: transform 0.3s ease-in-out;
     width: 100%;
+
+    &--collapsed {
+      transform: translateY(100%);
+    }
 
     &__handle {
       display: flex;
       justify-content: center;
+      left: 50%;
       position: absolute;
       top: 0;
-      left: 50%;
       transform: translate(-50%, -100%);
     }
 
     &__handle-button {
-      background-color: var(--color-audio-bg);
-      border: 2px solid var(--color-audio-border);
-      border-bottom: unset;
+      background-color: var(--color-menu-selected-bg);
+      border: none;
       border-radius: 8px 8px 0 0;
-      color: var(--color-audio-play);
+      color: var(--color-menu-selected-text);
       cursor: pointer;
       padding: var(--spacing-2) var(--spacing-8);
 
@@ -165,16 +169,6 @@
         height: 24px;
         width: 24px;
       }
-    }
-
-    &--collapsed &__handle-button {
-      background-color: var(--color-menu-selected-bg);
-      border: none;
-      color: var(--color-menu-selected-text);
-    }
-
-    &--collapsed &__body {
-      display: none;
     }
 
     &__body {

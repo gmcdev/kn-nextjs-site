@@ -6,7 +6,6 @@ import type { PostWithRelationships, SiteData, Store } from '@/lib/types';
 import { getPostUri } from '@/components/Breadcrumbs/functions/getPostUri';
 import { getLeafCategory } from '@/lib/store';
 import { CDN_URL } from '@/utils/constants';
-import withBasePath from '@/utils/withBasePath';
 
 export const buildAudioTrack = (store: Store, post: PostWithRelationships): AudioTrack | null => {
   const postContentElements = parse(post.content);
@@ -32,7 +31,7 @@ export const buildAudioTrack = (store: Store, post: PostWithRelationships): Audi
   const postUri = category ? getPostUri(category, post) : undefined;
 
   return {
-    link: postUri ? withBasePath(postUri) : undefined,
+    link: postUri,
     postId: post.id,
     src: audioPath ? `${CDN_URL}${audioPath}` : '',
     thumb: thumbUrl,

@@ -13,6 +13,13 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const lastUrlUpdateRef = useRef<string | null>(null);
 
+  // Reset the URL dedup guard when scroll tracking reactivates (e.g., after navigation)
+  useEffect(() => {
+    if (!scrollActivated) {
+      lastUrlUpdateRef.current = null;
+    }
+  }, [scrollActivated]);
+
   // Activate scroll tracking on real user interaction (not layout-induced scroll)
   // Re-attach activation listeners whenever scrollActivated resets to false
   useEffect(() => {

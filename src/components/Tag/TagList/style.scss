@@ -124,10 +124,6 @@
   }
 
   &__audio {
-    &-posts:last-child {
-      padding: 0 0 var(--spacing-24) 0;
-    }
-
     &-post {
       width: 100%;
       flex: 0 0 auto;

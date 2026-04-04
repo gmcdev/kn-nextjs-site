@@ -1,16 +1,16 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-import ArrowDown from '@/icons/ArrowDown';
 import PauseIcon from '@/icons/PauseIcon';
 import PlayIcon from '@/icons/PlayIcon';
 import SkipBackIcon from '@/icons/SkipBackIcon';
 import SkipForwardIcon from '@/icons/SkipForwardIcon';
 import SpeakerIcon from '@/icons/SpeakerIcon';
 import useAudioStore from '@/stores/useAudioStore';
+import useModalStore from '@/stores/useModalStore';
+import useNavigationStore from '@/stores/useNavigationStore';
 import { buildAudioTrack, getOrderedAudioPostIds } from '@/utils/audio-manager';
 import { CDN_URL } from '@/utils/constants';
 
@@ -19,8 +19,10 @@ import { useSiteData } from '../SiteDataProvider';
 import './style.scss';
 
 const AudioPlayer = () => {
-  const router = useRouter();
   const { siteScopes, store } = useSiteData();
+  const openModal = useModalStore((state) => state.open);
+  const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
+  const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
   const pause = useAudioStore((state) => state.pause);
@@ -149,13 +151,64 @@ const AudioPlayer = () => {
   };
 
   const handleGotoPost = () => {
-    if (currentTrack?.link) {
-      router.push(currentTrack.link);
+    if (!currentTrack) {
+      return;
+    }
+    const post = store.postMap[currentTrack.postId];
+    if (!post) {
+      return;
+    }
+    const tag = post.tagIds[0] ? store.tagMap[post.tagIds[0]] : null;
+    if (tag) {
+      const categoryId = post.categoryIds[0];
+      if (categoryId) {
+        setCurrentCategoryId(categoryId);
+      }
+      setCurrentTagId(tag.id);
+      openModal(post, tag);
     }
   };
 
-  const toggleCollapseExpand = () => {
-    setIsCollapsed((previous) => !previous);
+  const playerRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef(0);
+  const isDragging = useRef(false);
+
+  const expandPlayer = () => {
+    setIsCollapsed(false);
+  };
+
+  const handleBodyTouchStart = (event: React.TouchEvent) => {
+    dragStartY.current = event.touches[0].clientY;
+    isDragging.current = false;
+    const player = playerRef.current;
+    if (player) {
+      player.style.transition = 'none';
+    }
+  };
+
+  const handleBodyTouchMove = (event: React.TouchEvent) => {
+    const deltaY = event.touches[0].clientY - dragStartY.current;
+    if (deltaY > 0) {
+      isDragging.current = true;
+      const player = playerRef.current;
+      if (player) {
+        player.style.transform = `translateY(${deltaY}px)`;
+      }
+    }
+  };
+
+  const handleBodyTouchEnd = (event: React.TouchEvent) => {
+    const player = playerRef.current;
+    if (!player) {
+      return;
+    }
+    const deltaY = event.changedTouches[0].clientY - dragStartY.current;
+    player.style.transition = '';
+    player.style.transform = '';
+    if (isDragging.current && deltaY > 60) {
+      setIsCollapsed(true);
+    }
+    isDragging.current = false;
   };
 
   if (!currentTrack) {
@@ -168,19 +221,25 @@ const AudioPlayer = () => {
   const hasNext = currentIndex < orderedAudioPostIds.length - 1;
 
   return (
-    <div className={`audio-player ${isCollapsed ? 'audio-player--collapsed' : ''}`}>
-      {/* Mobile collapse handle — always visible */}
-      <div className="audio-player__handle">
-        <button
-          aria-label={isCollapsed ? 'Expand player' : 'Collapse player'}
-          className="audio-player__handle-button"
-          onClick={toggleCollapseExpand}
-        >
-          {isCollapsed ? <SpeakerIcon /> : <ArrowDown />}
-        </button>
-      </div>
+    <div className={`audio-player ${isCollapsed ? 'audio-player--collapsed' : ''}`} ref={playerRef}>
+      {isCollapsed ? (
+        <div className="audio-player__handle">
+          <button
+            aria-label="Expand player"
+            className="audio-player__handle-button"
+            onClick={expandPlayer}
+          >
+            <SpeakerIcon />
+          </button>
+        </div>
+      ) : null}
 
-      <div className="audio-player__body">
+      <div
+        className="audio-player__body"
+        onTouchEnd={handleBodyTouchEnd}
+        onTouchMove={handleBodyTouchMove}
+        onTouchStart={handleBodyTouchStart}
+      >
         {/* Artwork with transport overlay */}
         <div className="audio-player__artwork-container">
           {thumb ? (

@@ -21,6 +21,8 @@ const MobileDrawer = ({ isOpen, onClose }: MobileDrawerProps) => {
   const { siteScopes, store } = useSiteData();
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
   const currentTagId = useNavigationStore((state) => state.currentTagId);
+  const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
+  const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const openModal = useModalStore((state) => state.open);
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -55,13 +57,15 @@ const MobileDrawer = ({ isOpen, onClose }: MobileDrawerProps) => {
     });
   }, []);
 
-  const handlePostClick = useCallback((post: { id: string }, tag: TagWithRelationships) => {
+  const handlePostClick = useCallback((categoryId: string, post: { id: string }, tag: TagWithRelationships) => {
+    setCurrentCategoryId(categoryId);
+    setCurrentTagId(tag.id);
     const fullPost = store.postMap[post.id];
     if (fullPost) {
       openModal(fullPost, tag);
     }
     onClose();
-  }, [onClose, openModal, store.postMap]);
+  }, [onClose, openModal, setCurrentCategoryId, setCurrentTagId, store.postMap]);
 
   const currentRootSlug = useMemo(() => {
     if (!currentCategoryId) {
@@ -107,8 +111,9 @@ const MobileDrawer = ({ isOpen, onClose }: MobileDrawerProps) => {
         </div>
         {isExpanded ? (
           <div className="mobile-drawer__children">
-            {children.map((child) => renderScope(child, depth + 1))}
-            {tags.map((tag) => renderTag(category, tag))}
+            {hasChildren
+              ? children.map((child) => renderScope(child, depth + 1))
+              : tags.map((tag) => renderTag(category, tag))}
           </div>
         ) : null}
       </div>
@@ -145,7 +150,7 @@ const MobileDrawer = ({ isOpen, onClose }: MobileDrawerProps) => {
                 <button
                   className="mobile-drawer__post"
                   key={postId}
-                  onClick={() => handlePostClick(post, tag)}
+                  onClick={() => handlePostClick(category.id, post, tag)}
                 >
                   {post.cdnFeaturedImage ? (
                     <img

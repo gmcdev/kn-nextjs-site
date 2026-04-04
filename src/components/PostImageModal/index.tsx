@@ -32,7 +32,6 @@ const PostImageModal = () => {
   const post = useModalStore((state) => state.post);
   const switchTag = useModalStore((state) => state.switchTag);
   const tag = useModalStore((state) => state.tag);
-  const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const currentTrack = useAudioStore((state) => state.currentTrack);
@@ -46,23 +45,31 @@ const PostImageModal = () => {
 
   const postIds = tag?.postIds ?? [];
   const currentPost = postIds[currentIndex] ? store.postMap[postIds[currentIndex]] : post;
-  const cdnFeaturedImage = currentPost?.cdnFeaturedImage;
-  const isAudioPost = currentPost?.postMeta.contentType === 'audio';
   const isCurrentTrack = currentTrack?.postId === currentPost?.id;
   const isCurrentlyPlaying = isCurrentTrack && isPlaying;
 
+  const allTags = useMemo(() => collectAllTags(siteScopes), [siteScopes]);
+  const currentTagEntry = useMemo(
+    () => tag ? allTags.find((entry) => entry.tag.id === tag.id) : undefined,
+    [allTags, tag],
+  );
+  const currentTagIndex = useMemo(
+    () => currentTagEntry ? allTags.indexOf(currentTagEntry) : -1,
+    [allTags, currentTagEntry],
+  );
+
   // Update URL to /{categorySlug}/{tagSlug}/{postSlug} as user navigates
   useEffect(() => {
-    if (!currentPost || !tag || !currentCategoryId) {
+    if (!currentPost || !tag || !currentTagEntry) {
       return;
     }
-    const category = store.categoryMap[currentCategoryId];
+    const category = store.categoryMap[currentTagEntry.categoryId];
     if (!category) {
       return;
     }
     const path = `/${category.slug}/${tag.slug}/${currentPost.slug}`;
     replaceUrl(path);
-  }, [currentCategoryId, currentPost, store.categoryMap, tag]);
+  }, [currentPost, currentTagEntry, store.categoryMap, tag]);
 
   // Keep the underlying page scrolled to the current tag as the modal navigates.
   useEffect(() => {
@@ -86,14 +93,14 @@ const PostImageModal = () => {
   }, [tag]);
 
   const close = useCallback(() => {
-    if (tag && currentCategoryId) {
-      const category = store.categoryMap[currentCategoryId];
+    if (tag && currentTagEntry) {
+      const category = store.categoryMap[currentTagEntry.categoryId];
       if (category) {
         router.push(`/${category.slug}/${tag.slug}`);
       }
     }
     closeModal();
-  }, [closeModal, currentCategoryId, router, store.categoryMap, tag]);
+  }, [closeModal, currentTagEntry, router, store.categoryMap, tag]);
 
   const scrollToIndex = useCallback((index: number) => {
     const carousel = carouselRef.current;
@@ -107,12 +114,6 @@ const PostImageModal = () => {
       isNavigatingRef.current = false;
     }, 400);
   }, []);
-
-  const allTags = useMemo(() => collectAllTags(siteScopes), [siteScopes]);
-  const currentTagIndex = useMemo(
-    () => tag ? allTags.findIndex((entry) => entry.tag.id === tag.id) : -1,
-    [allTags, tag],
-  );
 
   const jumpToTag = useCallback((tagEntry: { categoryId: string; tag: TagWithRelationships }, startIndex: number) => {
     setCurrentCategoryId(tagEntry.categoryId);

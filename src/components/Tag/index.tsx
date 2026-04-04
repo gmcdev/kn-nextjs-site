@@ -58,9 +58,13 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
         </div>
         <div className={`tag__${postContentType}-posts`}>
           <div className={`tag__${postContentType}-post`} key={post.id}>
-            <button className="tag__post-button" onClick={handlePostClick}>
+            {postContentType === 'audio' ? (
               <Post post={post} />
-            </button>
+            ) : (
+              <button className="tag__post-button" onClick={handlePostClick}>
+                <Post post={post} />
+              </button>
+            )}
           </div>
         </div>
       </div>
