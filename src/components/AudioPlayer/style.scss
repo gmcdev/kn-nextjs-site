@@ -7,10 +7,6 @@
   width: min(15%, 200px);
   z-index: 500;
 
-  &__handle {
-    display: none;
-  }
-
   &__body {
     display: flex;
     flex-direction: column;
@@ -146,29 +142,6 @@
 
     &--collapsed {
       transform: translateY(100%);
-    }
-
-    &__handle {
-      display: flex;
-      justify-content: center;
-      left: 50%;
-      position: absolute;
-      top: 0;
-      transform: translate(-50%, -100%);
-    }
-
-    &__handle-button {
-      background-color: var(--color-menu-selected-bg);
-      border: none;
-      border-radius: 8px 8px 0 0;
-      color: var(--color-menu-selected-text);
-      cursor: pointer;
-      padding: var(--spacing-2) var(--spacing-8);
-
-      & svg {
-        height: 24px;
-        width: 24px;
-      }
     }
 
     &__body {

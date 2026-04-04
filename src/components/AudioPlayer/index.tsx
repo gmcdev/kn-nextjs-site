@@ -1,13 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
 import PauseIcon from '@/icons/PauseIcon';
 import PlayIcon from '@/icons/PlayIcon';
 import SkipBackIcon from '@/icons/SkipBackIcon';
 import SkipForwardIcon from '@/icons/SkipForwardIcon';
-import SpeakerIcon from '@/icons/SpeakerIcon';
 import useAudioStore from '@/stores/useAudioStore';
 import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
@@ -23,15 +22,15 @@ const AudioPlayer = () => {
   const openModal = useModalStore((state) => state.open);
   const setCurrentCategoryId = useNavigationStore((state) => state.setCurrentCategoryId);
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
+  const isCollapsed = useAudioStore((state) => state.collapsed);
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
   const pause = useAudioStore((state) => state.pause);
   const play = useAudioStore((state) => state.play);
   const resume = useAudioStore((state) => state.resume);
+  const setCollapsed = useAudioStore((state) => state.setCollapsed);
   const setIsPlaying = useAudioStore((state) => state.setIsPlaying);
   const setWaveSurfer = useAudioStore((state) => state.setWaveSurfer);
-
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const waveSurferRef = useRef<WaveSurfer | null>(null);
   const waveformRef = useRef<HTMLDivElement>(null);
@@ -173,10 +172,6 @@ const AudioPlayer = () => {
   const dragStartY = useRef(0);
   const isDragging = useRef(false);
 
-  const expandPlayer = () => {
-    setIsCollapsed(false);
-  };
-
   const handleBodyTouchStart = (event: React.TouchEvent) => {
     dragStartY.current = event.touches[0].clientY;
     isDragging.current = false;
@@ -206,7 +201,7 @@ const AudioPlayer = () => {
     player.style.transition = '';
     player.style.transform = '';
     if (isDragging.current && deltaY > 60) {
-      setIsCollapsed(true);
+      setCollapsed(true);
     }
     isDragging.current = false;
   };
@@ -222,18 +217,6 @@ const AudioPlayer = () => {
 
   return (
     <div className={`audio-player ${isCollapsed ? 'audio-player--collapsed' : ''}`} ref={playerRef}>
-      {isCollapsed ? (
-        <div className="audio-player__handle">
-          <button
-            aria-label="Expand player"
-            className="audio-player__handle-button"
-            onClick={expandPlayer}
-          >
-            <SpeakerIcon />
-          </button>
-        </div>
-      ) : null}
-
       <div
         className="audio-player__body"
         onTouchEnd={handleBodyTouchEnd}

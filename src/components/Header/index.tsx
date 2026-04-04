@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { type RefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import SpeakerIcon from '@/icons/SpeakerIcon';
 import { getRootCategory, orderTopCategories } from '@/lib/store';
+import useAudioStore from '@/stores/useAudioStore';
 import useNavigationStore from '@/stores/useNavigationStore';
+import { buildAudioTrack, getOrderedAudioPostIds } from '@/utils/audio-manager';
 import { SCROLL_COLLAPSE_THRESHOLD, SCROLL_EXPAND_THRESHOLD } from '@/utils/layout-constants';
 
 import { useSiteData } from '../SiteDataProvider';
@@ -17,8 +20,13 @@ type HeaderProps = Readonly<{
 }>;
 
 const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
-  const { store } = useSiteData();
+  const { siteScopes, store } = useSiteData();
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
+  const isCollapsed = useAudioStore((state) => state.collapsed);
+  const currentTrack = useAudioStore((state) => state.currentTrack);
+  const isPlaying = useAudioStore((state) => state.isPlaying);
+  const play = useAudioStore((state) => state.play);
+  const setCollapsed = useAudioStore((state) => state.setCollapsed);
 
   const categories = Object.values(store.categoryMap).filter((c) => !c.parentId);
 
@@ -27,6 +35,26 @@ const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
     const root = current ? getRootCategory(store, current) : undefined;
     return orderTopCategories(categories, root);
   }, [categories, currentCategoryId, store]);
+
+  const orderedAudioPostIds = useMemo(() => getOrderedAudioPostIds(store, siteScopes), [siteScopes, store]);
+
+  const handleAudioToggle = useCallback(() => {
+    if (!currentTrack) {
+      // Play the first available audio track
+      for (const postId of orderedAudioPostIds) {
+        const post = store.postMap[postId];
+        if (post) {
+          const track = buildAudioTrack(store, post);
+          if (track) {
+            play(track);
+            return;
+          }
+        }
+      }
+    } else {
+      setCollapsed(!isCollapsed);
+    }
+  }, [currentTrack, isCollapsed, orderedAudioPostIds, play, setCollapsed, store]);
 
   const hasScrolled = useRef(false);
   const [animClasses, setAnimClasses] = useState({
@@ -86,17 +114,26 @@ const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
           alt="King Nitram & the Merry Universe"
           style={{ height: 40, width: 217 }}
         />
-        <button
-          aria-label="Open navigation"
-          className="header__menu-button"
-          onClick={onMenuOpen}
-        >
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-            <rect x="3" y="5" width="18" height="2" rx="1" />
-            <rect x="3" y="11" width="18" height="2" rx="1" />
-            <rect x="3" y="17" width="18" height="2" rx="1" />
-          </svg>
-        </button>
+        <div className="header__mobile-buttons">
+          <button
+            aria-label={currentTrack ? (isCollapsed ? 'Show player' : 'Hide player') : 'Play music'}
+            className={`header__audio-button ${isPlaying ? 'header__audio-button--playing' : ''}`}
+            onClick={handleAudioToggle}
+          >
+            <SpeakerIcon />
+          </button>
+          <button
+            aria-label="Open navigation"
+            className="header__menu-button"
+            onClick={onMenuOpen}
+          >
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+              <rect x="3" y="5" width="18" height="2" rx="1" />
+              <rect x="3" y="11" width="18" height="2" rx="1" />
+              <rect x="3" y="17" width="18" height="2" rx="1" />
+            </svg>
+          </button>
+        </div>
       </div>
       <div className="header__top-nav">
         <menu className="header__top-nav__menu">
