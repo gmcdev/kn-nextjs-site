@@ -7,7 +7,7 @@ const HomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/promoted');
+    router.replace('/art');
   }, [router]);
 
   return null;
