@@ -14,12 +14,15 @@ export async function generateStaticParams() {
   const { siteScopes, store } = await getSiteData();
 
   // Post params: /{leafCategory}/{postSlug}
-  const postParams = Object.values(store.postMap).map((post) => {
+  const postParams = Object.values(store.postMap).flatMap((post) => {
     const leafCategory = getLeafCategory(store, post);
-    return {
+    if (!leafCategory) {
+      return [];
+    }
+    return [{
       categorySlug: leafCategory.slug,
       tagSlug: post.slug,
-    };
+    }];
   });
 
   // Tag params: /{categorySlug}/{tagSlug} — only at leaf scopes (no children)

@@ -7,7 +7,7 @@ const HomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/music');
+    router.replace('/promoted');
   }, [router]);
 
   return null;

@@ -34,18 +34,31 @@ export function generateStore({
     categoryBySlug[category.slug] = category;
   });
 
+  // Filter posts to only reference categories/tags that exist in this build
   const postMap: PostMap = {};
   const postBySlug: Record<string, PostWithRelationships> = {};
   posts.forEach((post) => {
-    postMap[post.id] = post;
-    postBySlug[post.slug] = post;
+    const validCategoryIds = post.categoryIds.filter((id) => categoryMap[id]);
+    const validTagIds = post.tagIds.filter((id) => tags.some((t) => t.id === id));
+    if (validCategoryIds.length === 0 || validTagIds.length === 0) {
+      return;
+    }
+    const validPost = { ...post, categoryIds: validCategoryIds, tagIds: validTagIds };
+    postMap[validPost.id] = validPost;
+    postBySlug[validPost.slug] = validPost;
   });
 
+  // Filter tag postIds to only reference posts that exist
   const tagMap: TagMap = {};
   const tagBySlug: Record<string, TagWithRelationships> = {};
   tags.forEach((tag) => {
-    tagMap[tag.id] = tag;
-    tagBySlug[tag.slug] = tag;
+    const validPostIds = tag.postIds.filter((id) => postMap[id]);
+    if (validPostIds.length === 0) {
+      return;
+    }
+    const validTag = { ...tag, postIds: validPostIds };
+    tagMap[validTag.id] = validTag;
+    tagBySlug[validTag.slug] = validTag;
   });
 
   return { categoryBySlug, categoryMap, postBySlug, postMap, tagBySlug, tagMap };
@@ -234,8 +247,8 @@ export function orderSiteScopes(store: Store, siteScopes: SiteData[]): SiteData[
 
 // --- Category Route Helpers ---
 
-export function getLeafCategory(store: Store, post: PostWithRelationships): Category {
-  const postCategories = post.categoryIds.map((id) => store.categoryMap[id]);
+export function getLeafCategory(store: Store, post: PostWithRelationships): Category | undefined {
+  const postCategories = post.categoryIds.map((id) => store.categoryMap[id]).filter(Boolean);
 
   const topLevel: Category[] = [];
   const children: Category[] = [];
@@ -248,6 +261,10 @@ export function getLeafCategory(store: Store, post: PostWithRelationships): Cate
   });
 
   const ordered = [...topLevel, ...children];
+  if (ordered.length === 0) {
+    return undefined;
+  }
+
   const branch: Category[] = [ordered[0]];
 
   for (let i = 1; i < ordered.length; i++) {
@@ -294,6 +311,39 @@ export function collectAllTags(siteScopes: SiteData[]): { categoryId: string; ta
       result.push({ categoryId: scope.category.id, tag });
     });
   };
+  siteScopes.forEach((scope) => walk(scope));
+  return result;
+}
+
+export function buildPromotedScopes(store: Store, siteScopes: SiteData[]): SiteData[] {
+  const result: SiteData[] = [];
+
+  const walk = (scope: SiteData) => {
+    if (scope.children.length > 0) {
+      scope.children.forEach((child) => walk(child));
+      return;
+    }
+
+    const promotedTags: TagWithRelationships[] = [];
+    scope.tags.forEach((tag) => {
+      const promotedPostIds = tag.postIds.filter((postId) => {
+        const post = store.postMap[postId];
+        return post?.postMeta.isPromoted;
+      });
+      if (promotedPostIds.length > 0) {
+        promotedTags.push({ ...tag, postIds: promotedPostIds });
+      }
+    });
+
+    if (promotedTags.length > 0) {
+      result.push({
+        category: scope.category,
+        children: [],
+        tags: promotedTags,
+      });
+    }
+  };
+
   siteScopes.forEach((scope) => walk(scope));
   return result;
 }

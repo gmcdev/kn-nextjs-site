@@ -22,6 +22,7 @@ export type TagWithRelationships = Tag & {
 export type PostMeta = {
   contentType: string;
   creationDate: string;
+  isPromoted: boolean;
 };
 
 export type CdnFeaturedImage = {

@@ -42,12 +42,12 @@ type RootLayoutProps = Readonly<{
 }>;
 
 const RootLayout = async ({ children }: RootLayoutProps) => {
-  const { siteScopes, store } = await getSiteData();
+  const { promotedScopes, siteScopes, store } = await getSiteData();
 
   return (
     <html lang="en" className={`${montserrat.variable} ${merriweather.variable}`}>
       <body>
-        <SiteDataProvider siteScopes={siteScopes} store={store}>
+        <SiteDataProvider promotedScopes={promotedScopes} siteScopes={siteScopes} store={store}>
           {children}
           <AudioPlayer />
           <PostImageModal />

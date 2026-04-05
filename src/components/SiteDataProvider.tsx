@@ -6,6 +6,7 @@ import type { PropsWithChildren } from 'react';
 import type { SiteData, Store } from '@/lib/types';
 
 type SiteDataContextValue = Readonly<{
+  promotedScopes: SiteData[];
   siteScopes: SiteData[];
   store: Store;
 }>;
@@ -14,8 +15,8 @@ const SiteDataContext = createContext<SiteDataContextValue | null>(null);
 
 type SiteDataProviderProps = Readonly<PropsWithChildren<SiteDataContextValue>>;
 
-const SiteDataProvider = ({ children, siteScopes, store }: SiteDataProviderProps) => {
-  const value = useMemo(() => ({ siteScopes, store }), [siteScopes, store]);
+const SiteDataProvider = ({ children, promotedScopes, siteScopes, store }: SiteDataProviderProps) => {
+  const value = useMemo(() => ({ promotedScopes, siteScopes, store }), [promotedScopes, siteScopes, store]);
   return (
     <SiteDataContext.Provider value={value}>
       {children}

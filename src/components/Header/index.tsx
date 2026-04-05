@@ -95,25 +95,31 @@ const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
     <header className={`header ${animClasses.header}`}>
       <div className="header__bg" />
       <div className={`header__logo ${animClasses.bigLogo}`}>
-        <img
-          src="/site/images/kn_logo.png"
-          alt="King Nitram & the Merry Universe"
-          style={{ height: 145, width: 553 }}
-        />
+        <Link href="/promoted">
+          <img
+            src="/site/images/kn_logo.png"
+            alt="King Nitram & the Merry Universe"
+            style={{ height: 145, width: 553 }}
+          />
+        </Link>
       </div>
       <div className={`header__logo-scroll ${animClasses.scrollLogo}`}>
-        <img
-          src="/site/images/kn_logo_mobile.png"
-          alt="King Nitram & the Merry Universe"
-          style={{ height: 28, width: 157 }}
-        />
+        <Link href="/promoted">
+          <img
+            src="/site/images/kn_logo_mobile.png"
+            alt="King Nitram & the Merry Universe"
+            style={{ height: 28, width: 157 }}
+          />
+        </Link>
       </div>
       <div className="header__logo-mobile">
-        <img
-          src="/site/images/kn_logo_mobile.png"
-          alt="King Nitram & the Merry Universe"
-          style={{ height: 40, width: 217 }}
-        />
+        <Link href="/promoted">
+          <img
+            src="/site/images/kn_logo_mobile.png"
+            alt="King Nitram & the Merry Universe"
+            style={{ height: 40, width: 217 }}
+          />
+        </Link>
         <div className="header__mobile-buttons">
           <button
             aria-label={currentTrack ? (isCollapsed ? 'Show player' : 'Hide player') : 'Play music'}

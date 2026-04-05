@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { buildSiteScopes, generateStore, orderSiteScopes } from './store';
+import { buildPromotedScopes, buildSiteScopes, generateStore, orderSiteScopes } from './store';
 import type { Category, PostWithRelationships, SiteData, Store, TagWithRelationships } from './types';
 import { fetchCategories, fetchPosts, fetchTags } from './wordpress';
 
@@ -31,10 +31,11 @@ function writeCache(data: CachedData): void {
 
 let cachedStore: Store | null = null;
 let cachedSiteScopes: SiteData[] | null = null;
+let cachedPromotedScopes: SiteData[] | null = null;
 
-export async function getSiteData(): Promise<{ siteScopes: SiteData[]; store: Store }> {
-  if (cachedStore && cachedSiteScopes) {
-    return { siteScopes: cachedSiteScopes, store: cachedStore };
+export async function getSiteData(): Promise<{ promotedScopes: SiteData[]; siteScopes: SiteData[]; store: Store }> {
+  if (cachedStore && cachedSiteScopes && cachedPromotedScopes) {
+    return { promotedScopes: cachedPromotedScopes, siteScopes: cachedSiteScopes, store: cachedStore };
   }
 
   const freshFetch = process.env.WP_FRESH === '1';
@@ -52,11 +53,9 @@ export async function getSiteData(): Promise<{ siteScopes: SiteData[]; store: St
       `Loaded ${categories.length} categories, ${tags.length} tags, ${posts.length} posts from cache`,
     );
   } else {
-    [categories, tags, posts] = await Promise.all([
-      fetchCategories(),
-      fetchTags(),
-      fetchPosts(),
-    ]);
+    categories = await fetchCategories();
+    tags = await fetchTags();
+    posts = await fetchPosts();
     console.log(
       `Fetched ${categories.length} categories, ${tags.length} tags, ${posts.length} posts`,
     );
@@ -81,11 +80,13 @@ export async function getSiteData(): Promise<{ siteScopes: SiteData[]; store: St
 
   const store = generateStore({ categories, posts, tags });
   const siteScopes = orderSiteScopes(store, buildSiteScopes(store, tags));
+  const promotedScopes = buildPromotedScopes(store, siteScopes);
 
   cachedStore = store;
   cachedSiteScopes = siteScopes;
+  cachedPromotedScopes = promotedScopes;
 
-  return { siteScopes, store };
+  return { promotedScopes, siteScopes, store };
 }
 
 export async function getStore(): Promise<Store> {

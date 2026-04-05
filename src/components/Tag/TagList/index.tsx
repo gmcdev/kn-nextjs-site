@@ -97,7 +97,7 @@ const TagList = ({ contentType, tag }: TagListProps) => {
             {contentType === 'audio' ? (
               <Post post={post} />
             ) : (
-              <button className="tag-list__post-button" onClick={() => openModal(post, tag)}>
+              <button className="tag-list__post-button" onClick={() => openModal(post, store.tagMap[tag.id] ?? tag)}>
                 <Post post={post} />
               </button>
             )}

@@ -8,8 +8,11 @@ import type {
 const GRAPHQL_ENDPOINT = 'https://kingnitram.com/admin/graphql';
 const PAGE_SIZE = 100;
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 5000;
+const REQUEST_DELAY_MS = 500;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function fetchGraphQL<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -126,6 +129,9 @@ export async function fetchCategories(): Promise<Category[]> {
     allNodes.push(...data.categories.nodes);
     hasNextPage = data.categories.pageInfo.hasNextPage;
     after = data.categories.pageInfo.endCursor;
+    if (hasNextPage) {
+      await delay(REQUEST_DELAY_MS);
+    }
   }
 
   return allNodes
@@ -192,6 +198,9 @@ export async function fetchTags(): Promise<TagWithRelationships[]> {
     allNodes.push(...data.tags.nodes);
     hasNextPage = data.tags.pageInfo.hasNextPage;
     after = data.tags.pageInfo.endCursor;
+    if (hasNextPage) {
+      await delay(REQUEST_DELAY_MS);
+    }
   }
 
   return allNodes.map(({ description, posts, ...rest }) => ({
@@ -216,6 +225,7 @@ interface PostsResponse {
       postMeta: {
         contentType: string;
         creationDate: string;
+        isPromoted: boolean | string | null;
       };
       slug: string;
       tags: {
@@ -246,6 +256,7 @@ const POSTS_QUERY = `
         postMeta {
           contentType
           creationDate
+          isPromoted
         }
         slug
         title
@@ -276,12 +287,20 @@ export async function fetchPosts(): Promise<PostWithRelationships[]> {
     allNodes.push(...data.posts.nodes);
     hasNextPage = data.posts.pageInfo.hasNextPage;
     after = data.posts.pageInfo.endCursor;
+    if (hasNextPage) {
+      await delay(REQUEST_DELAY_MS);
+    }
   }
 
-  return allNodes.map(({ categories, cdnFeaturedImageRaw, tags, title, ...rest }) => ({
+  return allNodes.map(({ categories, cdnFeaturedImageRaw, postMeta, tags, title, ...rest }) => ({
     ...rest,
     categoryIds: categories.nodes.map((category) => category.id),
     cdnFeaturedImage: parseCdnFeaturedImage(cdnFeaturedImageRaw),
+    postMeta: {
+      contentType: postMeta.contentType,
+      creationDate: postMeta.creationDate,
+      isPromoted: postMeta.isPromoted === true || postMeta.isPromoted === 'true',
+    },
     tagIds: tags.nodes.map((tag) => tag.id),
     title: title === '' ? 'Untitled' : title,
   }));
