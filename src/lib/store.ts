@@ -14,7 +14,7 @@ type RemainingItem = {
   tag: TagWithRelationships;
 };
 
-const CATEGORY_ORDER_BY_SLUG = ['art', 'music', 'cars', 'writing', 'misc'];
+const CATEGORY_ORDER_BY_SLUG = ['art', 'music', 'cars', 'pinball', 'misc'];
 
 // --- Store Generation ---
 

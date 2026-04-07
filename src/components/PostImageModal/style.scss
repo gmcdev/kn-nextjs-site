@@ -168,6 +168,27 @@
     object-fit: contain;
   }
 
+  &__video-content {
+    color: var(--color-post-text);
+    font-family: var(--fontFamily-sans);
+    max-height: 85vh;
+    max-width: 98vw;
+    overflow-y: auto;
+    padding: 0 var(--spacing-4);
+    width: 100%;
+
+    & figure {
+      margin: 0;
+    }
+
+    & iframe,
+    & video {
+      height: auto;
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+
   &__title {
     color: var(--color-heading-black);
     font-family: var(--fontFamily-sans);

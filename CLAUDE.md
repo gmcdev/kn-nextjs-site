@@ -55,8 +55,18 @@ app/[categorySlug]/[postSlug]/page.tsx    — individual post
 ```bash
 npm run dev              # Local development
 npm run build            # Static export to out/
+npm run build:fresh      # Static export, bypassing WordPress data cache
 npm run deploy           # rsync to Bluehost
 npm run build-and-deploy # Full pipeline
+```
+
+To verify WordPress content is coming through correctly without a full build:
+
+```bash
+node dev-ops/verify-content.mjs                        # check all categories (uses cache)
+node dev-ops/verify-content.mjs cars                   # filter to one category (uses cache)
+WP_FRESH=1 node dev-ops/verify-content.mjs             # fetch fresh from WordPress, update cache + check all
+WP_FRESH=1 node dev-ops/verify-content.mjs cars        # fetch fresh from WordPress, update cache + check one category
 ```
 
 ## Conventions

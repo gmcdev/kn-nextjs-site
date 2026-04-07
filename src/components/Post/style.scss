@@ -93,6 +93,14 @@
     }
   }
 
+  &__video {
+    &--thumbnail {
+      height: auto;
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+
   &__audio {
     background-color: var(--color-audio-bg);
     border: 2px solid var(--color-audio-border);

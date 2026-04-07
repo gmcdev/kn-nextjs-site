@@ -1,5 +1,6 @@
 'use client';
 
+import parse from 'html-react-parser';
 import { useRouter } from 'next/navigation';
 import type { TouchEvent as ReactTouchEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -378,12 +379,17 @@ const PostImageModal = () => {
             const carouselPost = store.postMap[postId];
             const image = carouselPost?.cdnFeaturedImage;
             const isSlideAudio = carouselPost?.postMeta.contentType === 'audio';
+            const isSlideVideo = carouselPost?.postMeta.contentType === 'video';
             const isSlideCurrentTrack = currentTrack?.postId === postId;
             const isSlidePlaying = isSlideCurrentTrack && isPlaying;
 
             return (
               <div className="post-image-modal__slide" key={postId}>
-                {image ? (
+                {isSlideVideo ? (
+                  <div className="post-image-modal__video-content">
+                    {carouselPost?.content ? parse(carouselPost.content) : null}
+                  </div>
+                ) : image ? (
                   <img
                     alt={image.altText || carouselPost.title}
                     className="post-image-modal__image"
