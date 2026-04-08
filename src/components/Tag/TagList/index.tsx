@@ -64,6 +64,100 @@ const TagList = ({ contentType, tag }: TagListProps) => {
     };
   }, [handleScroll]);
 
+  // iOS does not propagate vertical scroll from a nested overflow-x container to
+  // its ancestor scroll container. Detect direction on touchmove and forward
+  // vertical gestures to the page scroll container manually.
+  useEffect(() => {
+    const el = tagPostsElementRef.current;
+    if (!el || contentType !== 'default') {
+      return;
+    }
+
+    const scrollContainer = el.closest('.page-layout__page') as HTMLElement | null;
+    let startX = 0;
+    let startY = 0;
+    let lastY = 0;
+    let lastTime = 0;
+    let velocity = 0;
+    let direction: 'horizontal' | 'vertical' | null = null;
+    let rafId: number | null = null;
+    const LOCK_THRESHOLD = 5;
+    const FRICTION = 0.95;
+
+    const cancelMomentum = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      cancelMomentum();
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      lastY = startY;
+      lastTime = performance.now();
+      velocity = 0;
+      direction = null;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const currentX = event.touches[0].clientX;
+      const currentY = event.touches[0].clientY;
+      const now = performance.now();
+      const dt = now - lastTime;
+      const deltaFromLast = currentY - lastY;
+      lastY = currentY;
+      lastTime = now;
+
+      if (direction === null) {
+        const dx = Math.abs(currentX - startX);
+        const dy = Math.abs(currentY - startY);
+        if (dx > LOCK_THRESHOLD || dy > LOCK_THRESHOLD) {
+          direction = dy > dx ? 'vertical' : 'horizontal';
+        }
+      }
+
+      if (direction === 'vertical') {
+        event.preventDefault();
+        if (dt > 0) {
+          velocity = deltaFromLast / dt;
+        }
+        if (scrollContainer) {
+          scrollContainer.scrollTop -= deltaFromLast;
+        }
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (direction !== 'vertical' || !scrollContainer) {
+        return;
+      }
+      // Pixels per frame at 60fps, decaying by FRICTION each frame
+      let v = velocity * 16;
+      const momentum = () => {
+        if (Math.abs(v) < 0.5) {
+          return;
+        }
+        scrollContainer.scrollTop -= v;
+        v *= FRICTION;
+        rafId = requestAnimationFrame(momentum);
+      };
+      rafId = requestAnimationFrame(momentum);
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      cancelMomentum();
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [contentType]);
+
   const handleSetCurrentPost = useCallback(
     (nextPostIdx: number) => {
       currentPostIdxRef.current = nextPostIdx;
