@@ -1,7 +1,6 @@
 'use client';
 
 import parse from 'html-react-parser';
-import { useRouter } from 'next/navigation';
 import type { TouchEvent as ReactTouchEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
@@ -25,7 +24,6 @@ import { useSiteData } from '../SiteDataProvider';
 import './style.scss';
 
 const PostImageModal = () => {
-  const router = useRouter();
   const { siteScopes, store } = useSiteData();
   const closeModal = useModalStore((state) => state.close);
   const currentIndex = useModalStore((state) => state.currentIndex);
@@ -42,6 +40,7 @@ const PostImageModal = () => {
   const resumeAudio = useAudioStore((state) => state.resume);
   const carouselRef = useRef<HTMLDivElement>(null);
   const isNavigatingRef = useRef(false);
+  const preModalUrlRef = useRef<string | null>(null);
   const touchStartRef = useRef<{ x: number; atStart: boolean; atEnd: boolean; peakDelta: number } | null>(null);
 
   const postIds = tag?.postIds ?? [];
@@ -59,7 +58,17 @@ const PostImageModal = () => {
     [allTags, currentTagEntry],
   );
 
-  // Update URL to /{categorySlug}/{tagSlug}/{postSlug} as user navigates
+  // Capture the URL at the moment the modal opens so it can be restored on close.
+  useEffect(() => {
+    if (post && preModalUrlRef.current === null) {
+      preModalUrlRef.current = window.location.href;
+    } else if (!post) {
+      preModalUrlRef.current = null;
+    }
+  }, [post]);
+
+  // Update URL to /{categorySlug}/{tagSlug}/{postSlug} as user navigates.
+  // Uses replaceState so the underlying page never navigates or scrolls.
   useEffect(() => {
     if (!currentPost || !tag || !currentTagEntry) {
       return;
@@ -72,36 +81,12 @@ const PostImageModal = () => {
     replaceUrl(path);
   }, [currentPost, currentTagEntry, store.categoryMap, tag]);
 
-  // Keep the underlying page scrolled to the current tag as the modal navigates.
-  useEffect(() => {
-    if (!tag) {
-      return;
-    }
-    const pageContainer = document.querySelector('.page-layout__page');
-    if (!pageContainer) {
-      return;
-    }
-    const tagElement = pageContainer.querySelector<HTMLElement>(`[data-tag-id="${tag.id}"]`);
-    if (!tagElement) {
-      return;
-    }
-    const containerTop = pageContainer.getBoundingClientRect().top;
-    const tagTop = tagElement.getBoundingClientRect().top;
-    pageContainer.scrollTo({
-      behavior: 'smooth',
-      top: pageContainer.scrollTop + (tagTop - containerTop),
-    });
-  }, [tag]);
-
   const close = useCallback(() => {
-    if (tag && currentTagEntry) {
-      const category = store.categoryMap[currentTagEntry.categoryId];
-      if (category) {
-        router.push(`/${category.slug}/${tag.slug}`);
-      }
+    if (preModalUrlRef.current) {
+      window.history.replaceState({}, '', preModalUrlRef.current);
     }
     closeModal();
-  }, [closeModal, currentTagEntry, router, store.categoryMap, tag]);
+  }, [closeModal]);
 
   const scrollToIndex = useCallback((index: number) => {
     const carousel = carouselRef.current;
@@ -165,12 +150,7 @@ const PostImageModal = () => {
     isNavigatingRef.current = true;
 
     jumpToTag(targetEntry, startIndex);
-
-    const category = store.categoryMap[targetEntry.categoryId];
-    if (category) {
-      router.push(`/${category.slug}/${targetEntry.tag.slug}`);
-    }
-  }, [allTags, currentTagIndex, jumpToTag, router, store.categoryMap]);
+  }, [allTags, currentTagIndex, jumpToTag]);
 
   // Sync currentIndex to scroll position as the user swipes. Uses the nearest
   // snap point so the dot updates as soon as the scroll crosses the midpoint.

@@ -13,12 +13,47 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
   const setCurrentTagId = useNavigationStore((state) => state.setCurrentTagId);
   const lastUrlUpdateRef = useRef<string | null>(null);
 
+  // Tracks only the tag elements currently intersecting the scroll container.
+  // Eliminates querySelectorAll + getBoundingClientRect on every element each frame.
+  const visibleTagsRef = useRef<Map<string, HTMLElement>>(new Map());
+
   // Reset the URL dedup guard when scroll tracking reactivates (e.g., after navigation)
   useEffect(() => {
     if (!scrollActivated) {
       lastUrlUpdateRef.current = null;
     }
   }, [scrollActivated]);
+
+  // Maintain the set of currently-visible tag elements via IntersectionObserver.
+  // Attached once on mount so it doesn't depend on scroll activation state.
+  useEffect(() => {
+    const container = pageRef.current;
+    if (!container) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const tagId = (entry.target as HTMLElement).dataset.tagId;
+          if (!tagId) {
+            return;
+          }
+          if (entry.isIntersecting) {
+            visibleTagsRef.current.set(tagId, entry.target as HTMLElement);
+          } else {
+            visibleTagsRef.current.delete(tagId);
+          }
+        });
+      },
+      { root: container, threshold: 0 },
+    );
+
+    const tagElements = container.querySelectorAll<HTMLElement>('[data-tag-id]');
+    tagElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [pageRef]);
 
   // Activate scroll tracking on real user interaction (not layout-induced scroll)
   // Re-attach activation listeners whenever scrollActivated resets to false
@@ -53,20 +88,20 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
     };
   }, [activateScroll, pageRef, scrollActivated]);
 
-  // Find the topmost tag that hasn't scrolled past the container top
+  // Find the topmost visible tag and update current tag/category/URL.
+  // Only iterates the small set of currently-intersecting elements (typically 2–5),
+  // not all tag elements in the DOM.
   const updateCurrentTag = useCallback(() => {
     const container = pageRef.current;
     if (!container) {
       return;
     }
 
-    const tagElements = container.querySelectorAll<HTMLElement>('[data-tag-id]');
     const containerTop = container.getBoundingClientRect().top;
-
     let bestElement: HTMLElement | null = null;
     let bestDistance = Infinity;
 
-    tagElements.forEach((element) => {
+    for (const element of visibleTagsRef.current.values()) {
       const rect = element.getBoundingClientRect();
       const relativeTop = rect.top - containerTop;
 
@@ -76,17 +111,17 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
           bestElement = element;
         }
       } else if (rect.bottom - containerTop > 0) {
-        const distance = -(relativeTop);
+        const distance = -relativeTop;
         if (bestDistance === Infinity || distance < bestDistance) {
           bestDistance = distance;
           bestElement = element;
         }
       }
-    });
+    }
 
     if (bestElement !== null) {
-      const tagId = (bestElement as HTMLElement).dataset.tagId;
-      const categoryId = (bestElement as HTMLElement).dataset.categoryId;
+      const tagId = bestElement.dataset.tagId;
+      const categoryId = bestElement.dataset.categoryId;
       if (tagId) {
         setCurrentTagId(tagId);
       }
@@ -109,7 +144,7 @@ const useTagTracking = (pageRef: RefObject<HTMLDivElement | null>, store: Store)
   }, [pageRef, setCurrentCategoryId, setCurrentTagId, store]);
 
   // Listen for scroll events after user interaction activates tracking.
-  // Throttled via rAF to avoid expensive DOM queries on every scroll event.
+  // Throttled via rAF to avoid layout work on every scroll event.
   useEffect(() => {
     if (!scrollActivated) {
       return;

@@ -28,6 +28,7 @@ const AudioPost = ({ post }: AudioPostProps) => {
   const openModal = useModalStore((state) => state.open);
 
   const audioRequest = useMemo(() => buildAudioTrack(store, post), [post, store]);
+  const parsedTitle = useMemo(() => (post.title ? parse(post.title) : null), [post.title]);
 
   if (!audioRequest) {
     return null;
@@ -75,7 +76,7 @@ const AudioPost = ({ post }: AudioPostProps) => {
 
       <button className="post__audio--player" onClick={handleAudioClick}>
         <h1 itemProp="name" className="post__audio--headline">
-          {post.title ? parse(post.title) : null}
+          {parsedTitle}
         </h1>
         <div className="post__audio--date">{post.postMeta.creationDate}</div>
       </button>

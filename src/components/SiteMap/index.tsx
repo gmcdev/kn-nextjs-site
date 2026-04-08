@@ -26,8 +26,8 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
   const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
   const openModal = useModalStore((state) => state.open);
 
-  const hasScrolled = useRef(false);
   const [animClasses, setAnimClasses] = useState({ menu: '' });
+  const isFixedRef = useRef(false);
 
   useEffect(() => {
     const pageElement = pageRef.current;
@@ -36,14 +36,15 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     }
     const handleScroll = () => {
       const scrollY = pageElement.scrollTop;
-      if (scrollY > SCROLL_COLLAPSE_THRESHOLD) {
+      if (scrollY > SCROLL_COLLAPSE_THRESHOLD && !isFixedRef.current) {
+        isFixedRef.current = true;
         setAnimClasses({ menu: 'site-map__fixed' });
-        hasScrolled.current = true;
-      } else if (hasScrolled.current) {
+      } else if (scrollY <= SCROLL_COLLAPSE_THRESHOLD && isFixedRef.current) {
+        isFixedRef.current = false;
         setAnimClasses({ menu: 'site-map__relative' });
       }
     };
-    pageElement.addEventListener('scroll', handleScroll);
+    pageElement.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       pageElement.removeEventListener('scroll', handleScroll);
     };

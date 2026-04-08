@@ -1,6 +1,7 @@
 'use client';
 
 import parse from 'html-react-parser';
+import { useMemo } from 'react';
 
 import type { PostWithRelationships } from '@/lib/types';
 
@@ -9,6 +10,9 @@ type DefaultPostProps = Readonly<{
 }>;
 
 const DefaultPost = ({ post }: DefaultPostProps) => {
+  const parsedTitle = useMemo(() => (post.title ? parse(post.title) : null), [post.title]);
+  const parsedContent = useMemo(() => parse(post.content), [post.content]);
+
   return (
     <article
       className="post__default"
@@ -17,13 +21,13 @@ const DefaultPost = ({ post }: DefaultPostProps) => {
     >
       <div className="post__default__header">
         <h1 itemProp="headline" className="post__default--headline">
-          {post.title ? parse(post.title) : null}
+          {parsedTitle}
         </h1>
         <div className="post__default--date">{post.postMeta.creationDate}</div>
       </div>
 
       <section className="post__default--article" itemProp="articleBody">
-        {parse(post.content)}
+        {parsedContent}
       </section>
     </article>
   );
