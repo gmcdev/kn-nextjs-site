@@ -23,6 +23,11 @@ const TagList = ({ contentType, tag }: TagListProps) => {
   const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
   const nextPostIdx = useNavigationStore((state) => state.tagSwipeMap[tag.id]);
 
+  // For non-audio carousels, only render the current slide and its immediate
+  // neighbours. Empty placeholder divs at all other positions preserve the
+  // correct scrollLeft snap offsets without mounting any React subtree.
+  const currentPostIdx = nextPostIdx ?? 0;
+
   const tagPostsElementRef = useRef<HTMLDivElement>(null);
   const swipeDimensions = useSwipeDimensions(tagPostsElementRef);
 
@@ -90,17 +95,20 @@ const TagList = ({ contentType, tag }: TagListProps) => {
       className={`tag-list__${contentType}-posts`}
       style={{ height: swipeDimensions?.height }}
     >
-      {tag.postIds.map((postId) => {
+      {tag.postIds.map((postId, index) => {
         const post = store.postMap[postId];
+        const isInWindow = contentType === 'audio' || Math.abs(index - currentPostIdx) <= 1;
         return (
           <div className={`tag-list__${contentType}-post`} key={postId}>
-            {contentType === 'audio' ? (
-              <Post post={post} />
-            ) : (
-              <button className="tag-list__post-button" onClick={() => openModal(post, store.tagMap[tag.id] ?? tag)}>
+            {isInWindow ? (
+              contentType === 'audio' ? (
                 <Post post={post} />
-              </button>
-            )}
+              ) : (
+                <button className="tag-list__post-button" onClick={() => openModal(post, store.tagMap[tag.id] ?? tag)}>
+                  <Post post={post} />
+                </button>
+              )
+            ) : null}
           </div>
         );
       })}
