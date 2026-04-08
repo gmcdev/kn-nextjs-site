@@ -156,6 +156,7 @@ const MobileDrawer = ({ isOpen, onClose }: MobileDrawerProps) => {
                     <img
                       alt={post.cdnFeaturedImage.altText || post.title}
                       className="mobile-drawer__post-thumbnail"
+                      loading="lazy"
                       sizes="48px"
                       srcSet={post.cdnFeaturedImage.srcSet}
                     />

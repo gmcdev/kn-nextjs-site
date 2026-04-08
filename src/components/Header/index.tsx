@@ -85,7 +85,7 @@ const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
         });
       }
     };
-    pageRefElement?.addEventListener('scroll', handleScroll);
+    pageRefElement?.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       pageRefElement?.removeEventListener('scroll', handleScroll);
     };

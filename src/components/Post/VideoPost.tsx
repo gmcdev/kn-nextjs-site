@@ -26,6 +26,7 @@ const VideoPost = ({ post }: VideoPostProps) => {
         <img
           alt={image.altText || post.title}
           className="post__video--thumbnail"
+          loading="lazy"
           sizes={image.sizes}
           srcSet={image.srcSet}
         />

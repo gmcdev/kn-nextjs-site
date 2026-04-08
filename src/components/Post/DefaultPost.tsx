@@ -3,6 +3,8 @@
 import parse from 'html-react-parser';
 import { useMemo } from 'react';
 
+import parseLazyMedia from '@/utils/parseLazyMedia';
+
 import type { PostWithRelationships } from '@/lib/types';
 
 type DefaultPostProps = Readonly<{
@@ -11,7 +13,7 @@ type DefaultPostProps = Readonly<{
 
 const DefaultPost = ({ post }: DefaultPostProps) => {
   const parsedTitle = useMemo(() => (post.title ? parse(post.title) : null), [post.title]);
-  const parsedContent = useMemo(() => parse(post.content), [post.content]);
+  const parsedContent = useMemo(() => parse(post.content, parseLazyMedia), [post.content]);
 
   return (
     <article

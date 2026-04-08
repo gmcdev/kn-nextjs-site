@@ -63,7 +63,7 @@ const TagGridItem = ({ postId, tag }: TagGridItemProps) => {
 
   return (
     <button className="tag-grid__post-button" onClick={() => open(post, store.tagMap[tag.id] ?? tag)}>
-      <img alt={post.cdnFeaturedImage?.altText ?? 'Post thumbnail'} srcSet={srcSet} />
+      <img alt={post.cdnFeaturedImage?.altText ?? 'Post thumbnail'} loading="lazy" srcSet={srcSet} />
     </button>
   );
 };

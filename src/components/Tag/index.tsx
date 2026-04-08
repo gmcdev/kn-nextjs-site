@@ -92,15 +92,15 @@ const Tag = ({ post, rootCategorySlug, scope, tag }: TagProps) => {
         <TagAhref category={scope.category} tag={tag}>
           <h2 className="tag__header-name">{tag.name}</h2>
         </TagAhref>
-        {displayMode === 'list' ? (
-          <TagNavigation contentType={contentType} tag={tag} />
-        ) : null}
       </div>
       <VirtualizedItem initialHeight={500}>
         {displayMode === 'grid' ? (
           <TagGrid contentType={contentType} tag={tag} />
         ) : (
-          <TagList contentType={contentType} tag={tag} />
+          <>
+            <TagList contentType={contentType} tag={tag} />
+            <TagNavigation contentType={contentType} tag={tag} />
+          </>
         )}
       </VirtualizedItem>
     </div>

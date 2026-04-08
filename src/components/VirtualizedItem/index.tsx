@@ -55,7 +55,7 @@ const VirtualizedItem = forwardRef<HTMLDivElement | HTMLLIElement, VirtualizedIt
       if (canGetNextEntries && inView) {
         onGetNextEntries?.();
       }
-    }, contentRef);
+    }, { observed: contentRef, type: 'resize' });
 
     const Tag = element ?? 'div';
 

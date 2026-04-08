@@ -69,6 +69,7 @@ const AudioPost = ({ post }: AudioPostProps) => {
           <img
             alt={post.title || 'Track artwork'}
             className="post__audio--thumbnail-image"
+            loading="lazy"
             src={`${CDN_URL}${audioRequest.thumb}`}
           />
         </button>
