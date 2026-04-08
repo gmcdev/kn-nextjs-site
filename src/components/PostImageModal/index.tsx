@@ -2,7 +2,7 @@
 
 import parse from 'html-react-parser';
 import type { TouchEvent as ReactTouchEvent } from 'react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import ArrowLeft from '@/icons/ArrowLeft';
 import ArrowRight from '@/icons/ArrowRight';
@@ -39,7 +39,7 @@ const PostImageModal = () => {
   const playAudio = useAudioStore((state) => state.play);
   const resumeAudio = useAudioStore((state) => state.resume);
   const carouselRef = useRef<HTMLDivElement>(null);
-  const isNavigatingRef = useRef(false);
+  const carouselInnerRef = useRef<HTMLDivElement>(null);
   const preModalUrlRef = useRef<string | null>(null);
   const touchStartRef = useRef<{ x: number; atStart: boolean; atEnd: boolean; peakDelta: number } | null>(null);
 
@@ -88,18 +88,28 @@ const PostImageModal = () => {
     closeModal();
   }, [closeModal]);
 
-  const scrollToIndex = useCallback((index: number) => {
-    const carousel = carouselRef.current;
-    if (!carousel) {
-      return;
+  // Position the carousel at the correct slide immediately (no animation) when the
+  // modal opens or the tag switches. useLayoutEffect fires synchronously after the
+  // DOM commit before paint, so the first frame always shows the right slide.
+  // currentIndex is intentionally excluded from deps — it holds the correct target
+  // value on every tag-switch render because switchTag sets both atomically.
+  useLayoutEffect(() => {
+    const inner = carouselInnerRef.current;
+    if (post && inner) {
+      inner.style.transition = 'none';
+      inner.style.transform = `translateX(-${currentIndex * 100}%)`;
     }
-    isNavigatingRef.current = true;
-    carousel.scrollTo({ behavior: 'smooth', left: index * carousel.clientWidth });
-    // Reset navigating flag after scroll settles
-    setTimeout(() => {
-      isNavigatingRef.current = false;
-    }, 400);
-  }, []);
+  }, [post, tag]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Navigate to a slide within the current tag with a smooth CSS transition.
+  const navigateTo = useCallback((index: number) => {
+    goToIndex(index);
+    const inner = carouselInnerRef.current;
+    if (inner) {
+      inner.style.transition = 'transform 0.3s ease';
+      inner.style.transform = `translateX(-${index * 100}%)`;
+    }
+  }, [goToIndex]);
 
   const jumpToTag = useCallback((tagEntry: { categoryId: string; tag: TagWithRelationships }, startIndex: number) => {
     setCurrentCategoryId(tagEntry.categoryId);
@@ -109,29 +119,23 @@ const PostImageModal = () => {
 
   const goToPrevious = useCallback(() => {
     if (currentIndex > 0) {
-      const nextIndex = currentIndex - 1;
-      goToIndex(nextIndex);
-      scrollToIndex(nextIndex);
+      navigateTo(currentIndex - 1);
     } else if (currentTagIndex > 0) {
       const previousTagEntry = allTags[currentTagIndex - 1];
       const lastIndex = previousTagEntry.tag.postIds.length - 1;
       jumpToTag(previousTagEntry, lastIndex);
     }
-  }, [allTags, currentIndex, currentTagIndex, goToIndex, jumpToTag, scrollToIndex]);
+  }, [allTags, currentIndex, currentTagIndex, jumpToTag, navigateTo]);
 
   const goToNext = useCallback(() => {
     if (currentIndex < postIds.length - 1) {
-      const nextIndex = currentIndex + 1;
-      goToIndex(nextIndex);
-      scrollToIndex(nextIndex);
+      navigateTo(currentIndex + 1);
     } else if (currentTagIndex < allTags.length - 1) {
       const nextTagEntry = allTags[currentTagIndex + 1];
       jumpToTag(nextTagEntry, 0);
     }
-  }, [allTags, currentIndex, currentTagIndex, goToIndex, jumpToTag, postIds.length, scrollToIndex]);
+  }, [allTags, currentIndex, currentTagIndex, jumpToTag, navigateTo, postIds.length]);
 
-  // Boundary swipe: advance to the adjacent tag in the modal and navigate the
-  // underlying page to that tag's route.
   const handleBoundarySwipe = useCallback((direction: 'next' | 'previous') => {
     const targetEntry = direction === 'previous'
       ? currentTagIndex > 0 ? allTags[currentTagIndex - 1] : null
@@ -145,32 +149,9 @@ const PostImageModal = () => {
       ? targetEntry.tag.postIds.length - 1
       : 0;
 
-    // Suppress handleScroll so the scroll-snap reset to 0 during re-render
-    // doesn't override the target index.
-    isNavigatingRef.current = true;
-
     jumpToTag(targetEntry, startIndex);
   }, [allTags, currentTagIndex, jumpToTag]);
 
-  // Sync currentIndex to scroll position as the user swipes. Uses the nearest
-  // snap point so the dot updates as soon as the scroll crosses the midpoint.
-  const handleScroll = useCallback(() => {
-    if (isNavigatingRef.current) {
-      return;
-    }
-    const carousel = carouselRef.current;
-    if (!carousel || carousel.clientWidth === 0) {
-      return;
-    }
-    const nextIndex = Math.round(carousel.scrollLeft / carousel.clientWidth);
-    if (nextIndex !== currentIndex && nextIndex >= 0 && nextIndex < postIds.length) {
-      goToIndex(nextIndex);
-    }
-  }, [currentIndex, goToIndex, postIds.length]);
-
-  // Detect boundary swipes to navigate to previous/next tag.
-  // We track peak displacement during touchmove rather than relying on the
-  // touchend position, which can snap back due to scroll-container rubber-banding.
   const handleTouchStart = useCallback((event: ReactTouchEvent) => {
     const touch = event.touches[0];
     touchStartRef.current = {
@@ -199,19 +180,27 @@ const PostImageModal = () => {
     if (!touchStart) {
       return;
     }
-    const SWIPE_THRESHOLD = 180;
+    const BOUNDARY_THRESHOLD = 180;
+    const WITHIN_THRESHOLD = 50;
 
-    if (touchStart.atStart && touchStart.peakDelta > SWIPE_THRESHOLD) {
+    if (touchStart.atStart && touchStart.peakDelta > BOUNDARY_THRESHOLD) {
       handleBoundarySwipe('previous');
-    } else if (touchStart.atEnd && touchStart.peakDelta < -SWIPE_THRESHOLD) {
+    } else if (touchStart.atEnd && touchStart.peakDelta < -BOUNDARY_THRESHOLD) {
       handleBoundarySwipe('next');
+    } else if (!touchStart.atStart && touchStart.peakDelta > WITHIN_THRESHOLD) {
+      goToPrevious();
+    } else if (!touchStart.atEnd && touchStart.peakDelta < -WITHIN_THRESHOLD) {
+      goToNext();
     }
-  }, [handleBoundarySwipe]);
+  }, [goToNext, goToPrevious, handleBoundarySwipe]);
 
-  // Detect boundary swipes from trackpad/Magic Mouse (wheel events, not touch).
-  // Accumulates horizontal scroll delta while at a boundary, resets after a pause.
+  // Detect swipes from trackpad/Magic Mouse (wheel events, not touch).
+  // Accumulates horizontal scroll delta, resets after a pause, and enforces a
+  // post-navigation cooldown so trailing momentum events don't trigger extra slides.
   const wheelDeltaRef = useRef(0);
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wheelCooldownRef = useRef(false);
+  const wheelCooldownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const carousel = carouselRef.current;
@@ -219,15 +208,28 @@ const PostImageModal = () => {
       return;
     }
 
-    const SWIPE_THRESHOLD = 500;
+    const WITHIN_THRESHOLD = 150;
+    const BOUNDARY_THRESHOLD = 1000;
+
+    const navigate = (action: () => void) => {
+      wheelDeltaRef.current = 0;
+      wheelCooldownRef.current = true;
+      action();
+      if (wheelCooldownTimeoutRef.current) {
+        clearTimeout(wheelCooldownTimeoutRef.current);
+      }
+      wheelCooldownTimeoutRef.current = setTimeout(() => {
+        wheelCooldownRef.current = false;
+      }, 600);
+    };
 
     const handleWheel = (event: WheelEvent) => {
-      const atStart = currentIndex === 0;
-      const atEnd = currentIndex === postIds.length - 1;
-      if (!atStart && !atEnd) {
-        wheelDeltaRef.current = 0;
+      if (wheelCooldownRef.current) {
         return;
       }
+
+      const atStart = currentIndex === 0;
+      const atEnd = currentIndex === postIds.length - 1;
 
       // Accumulate horizontal delta (positive = scroll right = next)
       wheelDeltaRef.current += event.deltaX;
@@ -237,14 +239,16 @@ const PostImageModal = () => {
       }
       wheelTimeoutRef.current = setTimeout(() => {
         wheelDeltaRef.current = 0;
-      }, 300);
+      }, 150);
 
-      if (atStart && wheelDeltaRef.current < -SWIPE_THRESHOLD) {
-        wheelDeltaRef.current = 0;
-        handleBoundarySwipe('previous');
-      } else if (atEnd && wheelDeltaRef.current > SWIPE_THRESHOLD) {
-        wheelDeltaRef.current = 0;
-        handleBoundarySwipe('next');
+      if (atStart && wheelDeltaRef.current < -BOUNDARY_THRESHOLD) {
+        navigate(() => handleBoundarySwipe('previous'));
+      } else if (atEnd && wheelDeltaRef.current > BOUNDARY_THRESHOLD) {
+        navigate(() => handleBoundarySwipe('next'));
+      } else if (!atEnd && wheelDeltaRef.current > WITHIN_THRESHOLD) {
+        navigate(goToNext);
+      } else if (!atStart && wheelDeltaRef.current < -WITHIN_THRESHOLD) {
+        navigate(goToPrevious);
       }
     };
 
@@ -254,24 +258,11 @@ const PostImageModal = () => {
       if (wheelTimeoutRef.current) {
         clearTimeout(wheelTimeoutRef.current);
       }
+      // wheelCooldownTimeoutRef is intentionally not cleared here — it must survive
+      // effect re-runs (triggered by currentIndex changing after navigation) so the
+      // post-navigation cooldown continues across the re-render.
     };
-  }, [currentIndex, handleBoundarySwipe, post, postIds.length]);
-
-  // Scroll to correct position when modal opens or tag switches.
-  useEffect(() => {
-    if (post && carouselRef.current) {
-      const carousel = carouselRef.current;
-      requestAnimationFrame(() => {
-        if (carousel.clientWidth > 0) {
-          isNavigatingRef.current = true;
-          carousel.scrollLeft = currentIndex * carousel.clientWidth;
-          setTimeout(() => {
-            isNavigatingRef.current = false;
-          }, 500);
-        }
-      });
-    }
-  }, [post, tag]); // Only on open or tag switch, not on index change
+  }, [currentIndex, goToNext, goToPrevious, handleBoundarySwipe, post, postIds.length]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -327,10 +318,7 @@ const PostImageModal = () => {
                 <button
                   className={`post-image-modal__nav-dot ${index === currentIndex ? 'post-image-modal__nav-dot--active' : ''}`}
                   key={postId}
-                  onClick={() => {
-                    goToIndex(index);
-                    scrollToIndex(index);
-                  }}
+                  onClick={() => navigateTo(index)}
                   aria-label={`Go to post ${index + 1}`}
                 >
                   <CircleIcon />
@@ -350,80 +338,81 @@ const PostImageModal = () => {
         <div
           className="post-image-modal__carousel"
           ref={carouselRef}
-          onScroll={handleScroll}
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           onTouchStart={handleTouchStart}
         >
-          {postIds.map((postId, index) => {
-            const carouselPost = store.postMap[postId];
-            const image = carouselPost?.cdnFeaturedImage;
-            const isSlideAudio = carouselPost?.postMeta.contentType === 'audio';
-            const isSlideVideo = carouselPost?.postMeta.contentType === 'video';
-            const isSlideCurrentTrack = currentTrack?.postId === postId;
-            const isSlidePlaying = isSlideCurrentTrack && isPlaying;
+          <div className="post-image-modal__carousel-inner" ref={carouselInnerRef}>
+            {postIds.map((postId, index) => {
+              const carouselPost = store.postMap[postId];
+              const image = carouselPost?.cdnFeaturedImage;
+              const isSlideAudio = carouselPost?.postMeta.contentType === 'audio';
+              const isSlideVideo = carouselPost?.postMeta.contentType === 'video';
+              const isSlideCurrentTrack = currentTrack?.postId === postId;
+              const isSlidePlaying = isSlideCurrentTrack && isPlaying;
 
-            return (
-              <div className="post-image-modal__slide" key={postId}>
-                {isSlideVideo ? (
-                  <div className="post-image-modal__video-content">
-                    {carouselPost?.content ? parse(carouselPost.content) : null}
-                  </div>
-                ) : image ? (
-                  <img
-                    alt={image.altText || carouselPost.title}
-                    className="post-image-modal__image"
-                    draggable={false}
-                    sizes="95vw"
-                    srcSet={image.srcSet}
-                  />
-                ) : null}
-                {isSlideAudio && index === currentIndex ? (
-                  <div className="post-image-modal__audio-transport">
-                    <button
-                      aria-label="Previous track"
-                      className={`post-image-modal__audio-button ${isAtAbsoluteStart ? 'post-image-modal__audio-button--inactive' : ''}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        goToPrevious();
-                      }}
-                    >
-                      <SkipBackIcon />
-                    </button>
-                    <button
-                      aria-label={isSlidePlaying ? 'Pause' : 'Play'}
-                      className="post-image-modal__audio-button post-image-modal__audio-button--play"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (!isSlideCurrentTrack) {
-                          const track = buildAudioTrack(store, carouselPost);
-                          if (track) {
-                            playAudio(track);
+              return (
+                <div className="post-image-modal__slide" key={postId}>
+                  {isSlideVideo ? (
+                    <div className="post-image-modal__video-content">
+                      {carouselPost?.content ? parse(carouselPost.content) : null}
+                    </div>
+                  ) : image ? (
+                    <img
+                      alt={image.altText || carouselPost.title}
+                      className="post-image-modal__image"
+                      draggable={false}
+                      sizes="95vw"
+                      srcSet={image.srcSet}
+                    />
+                  ) : null}
+                  {isSlideAudio && index === currentIndex ? (
+                    <div className="post-image-modal__audio-transport">
+                      <button
+                        aria-label="Previous track"
+                        className={`post-image-modal__audio-button ${isAtAbsoluteStart ? 'post-image-modal__audio-button--inactive' : ''}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          goToPrevious();
+                        }}
+                      >
+                        <SkipBackIcon />
+                      </button>
+                      <button
+                        aria-label={isSlidePlaying ? 'Pause' : 'Play'}
+                        className="post-image-modal__audio-button post-image-modal__audio-button--play"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (!isSlideCurrentTrack) {
+                            const track = buildAudioTrack(store, carouselPost);
+                            if (track) {
+                              playAudio(track);
+                            }
+                          } else if (isSlidePlaying) {
+                            pauseAudio();
+                          } else {
+                            resumeAudio();
                           }
-                        } else if (isSlidePlaying) {
-                          pauseAudio();
-                        } else {
-                          resumeAudio();
-                        }
-                      }}
-                    >
-                      {isSlidePlaying ? <PauseIcon /> : <PlayIcon />}
-                    </button>
-                    <button
-                      aria-label="Next track"
-                      className={`post-image-modal__audio-button ${isAtAbsoluteEnd ? 'post-image-modal__audio-button--inactive' : ''}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        goToNext();
-                      }}
-                    >
-                      <SkipForwardIcon />
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+                        }}
+                      >
+                        {isSlidePlaying ? <PauseIcon /> : <PlayIcon />}
+                      </button>
+                      <button
+                        aria-label="Next track"
+                        className={`post-image-modal__audio-button ${isAtAbsoluteEnd ? 'post-image-modal__audio-button--inactive' : ''}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          goToNext();
+                        }}
+                      >
+                        <SkipForwardIcon />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="post-image-modal__title">{currentPost?.title}</div>

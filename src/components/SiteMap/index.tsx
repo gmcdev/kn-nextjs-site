@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { getRootCategory } from '@/lib/store';
-import type { Category, PostWithRelationships, SiteData, TagWithRelationships } from '@/lib/types';
+import type { Category, SiteData, TagWithRelationships } from '@/lib/types';
 import useModalStore from '@/stores/useModalStore';
 import useNavigationStore from '@/stores/useNavigationStore';
 import { SCROLL_COLLAPSE_THRESHOLD } from '@/utils/layout-constants';
 
 import CategoryAhref from '../Breadcrumbs/CategoryAhref';
 import TagAhref from '../Breadcrumbs/TagAhref';
-import { getPostUri } from '../Breadcrumbs/functions/getPostUri';
+import { useMediaSize } from '../MediaListener';
 import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
@@ -20,18 +19,14 @@ type SiteMapProps = Readonly<{
 }>;
 
 const SiteMap = ({ pageRef }: SiteMapProps) => {
-  const { siteScopes, store } = useSiteData();
-  const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
-  const currentTagId = useNavigationStore((state) => state.currentTagId);
-  const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
-  const openModal = useModalStore((state) => state.open);
-
+  const mediaSize = useMediaSize();
+  const { siteScopes } = useSiteData();
   const [animClasses, setAnimClasses] = useState({ menu: '' });
   const isFixedRef = useRef(false);
 
   useEffect(() => {
     const pageElement = pageRef.current;
-    if (!pageElement) {
+    if (!pageElement || mediaSize === 'small' || mediaSize === 'medium') {
       return;
     }
     const handleScroll = () => {
@@ -48,118 +43,130 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
     return () => {
       pageElement.removeEventListener('scroll', handleScroll);
     };
-  }, [pageRef]);
+  }, [mediaSize, pageRef]);
 
-  const updateTagSwipeMap = (
-    _category: Category,
-    tag: TagWithRelationships,
-    _post: PostWithRelationships,
-    tagPostsIdx: number,
-  ) => {
-    setTagSwipeFor(tag.id, tagPostsIdx);
-  };
-
-  const isCurrentCategory = (category: Category) => {
-    if (!currentCategoryId) {
-      return false;
-    }
-    // Walk up the parent chain from the tracked category
-    let current: Category | undefined = store.categoryMap[currentCategoryId];
-    while (current) {
-      if (current.id === category.id) {
-        return true;
-      }
-      current = current.parentId ? store.categoryMap[current.parentId] : undefined;
-    }
-    return false;
-  };
-
-  const isCurrentTag = (tag: TagWithRelationships) => {
-    return tag.id === currentTagId;
-  };
-
-
-  const getCategoryJsx = (scope: SiteData, depth = 0) => {
-    const { category, children, tags } = scope;
-    const isCurrent = isCurrentCategory(category);
-    return (
-      <div key={category.id} className="site-map__outline--category">
-        <div
-          className={`site-map__outline--category-name${isCurrent ? ' site-map__outline--category-name-current' : ''}`}
-          style={depth === 0 ? { marginTop: '10px' } : {}}
-        >
-          <CategoryAhref category={category} />
-        </div>
-        {!isCurrent ? null : children.length > 0 ? (
-          <div className="site-map__outline--category-tags">
-            {children.map((childScope) => getCategoryJsx(childScope, depth + 1))}
-          </div>
-        ) : (
-          tags.map((tag) => getTagJsx(scope, tag))
-        )}
-      </div>
-    );
-  };
-
-  const getTagJsx = (scope: SiteData, tag: TagWithRelationships) => {
-    const { category } = scope;
-    const isCurrent = isCurrentTag(tag);
-    return (
-      <div key={`${category.id}-${tag.id}`} className="site-map__outline--tag">
-        {isCurrent ? (
-          <>
-            <TagAhref category={category} tag={tag}>
-              <div className="site-map__outline--tag-name-current">{tag.name}</div>
-            </TagAhref>
-            <div className="site-map__outline--tag-posts">
-              {tag.postIds.map((postId, tagPostsIdx) => {
-                const post = store.postMap[postId];
-                return getPostJsx(category, tag, post, tagPostsIdx);
-              })}
-            </div>
-          </>
-        ) : (
-          <TagAhref category={category} tag={tag} />
-        )}
-      </div>
-    );
-  };
-
-  const getPostJsx = (
-    category: Category,
-    tag: TagWithRelationships,
-    post: PostWithRelationships,
-    tagPostsIdx: number,
-  ) => {
-    const { srcSet } = post.cdnFeaturedImage ?? {};
-    return (
-      <div key={`${category.id}-${tag.id}-${post.id}`} className="site-map__outline--post">
-        <button onClick={() => {
-          updateTagSwipeMap(category, tag, post, tagPostsIdx);
-          openModal(post, tag);
-        }}>
-          <div className="site-map__outline--post-inner">
-            {srcSet ? (
-              <img
-                alt="Post thumbnail"
-                className="site-map__outline--post-thumbnail"
-                sizes="40px"
-                srcSet={srcSet}
-              />
-            ) : null}
-            <div className="site-map__outline--post-name">{post.title}</div>
-            <div className="site-map__outline--post-indicator">►</div>
-          </div>
-        </button>
-      </div>
-    );
-  };
+  if (mediaSize === 'small' || mediaSize === 'medium') {
+    return null;
+  }
 
   return (
     <div className={`site-map ${animClasses.menu}`}>
-      <div className="site-map__outline">{siteScopes.map((scope) => getCategoryJsx(scope))}</div>
+      <div className="site-map__outline">
+        {siteScopes.map((scope) => (
+          <SiteMapCategoryItem depth={0} key={scope.category.id} scope={scope} />
+        ))}
+      </div>
     </div>
   );
 };
 
 export default SiteMap;
+
+type SiteMapCategoryItemProps = Readonly<{
+  depth: number;
+  scope: SiteData;
+}>;
+
+// Only re-renders when this specific category transitions between current/not-current.
+const SiteMapCategoryItem = ({ depth, scope }: SiteMapCategoryItemProps) => {
+  const { store } = useSiteData();
+
+  const isCurrent = useNavigationStore(
+    useCallback(
+      (state) => {
+        if (!state.currentCategoryId) {
+          return false;
+        }
+        let current: Category | undefined = store.categoryMap[state.currentCategoryId];
+        while (current) {
+          if (current.id === scope.category.id) {
+            return true;
+          }
+          current = current.parentId ? store.categoryMap[current.parentId] : undefined;
+        }
+        return false;
+      },
+      [scope.category.id, store.categoryMap],
+    ),
+  );
+
+  return (
+    <div className="site-map__outline--category">
+      <div
+        className={`site-map__outline--category-name${isCurrent ? ' site-map__outline--category-name-current' : ''}`}
+        style={depth === 0 ? { marginTop: '10px' } : {}}
+      >
+        <CategoryAhref category={scope.category} />
+      </div>
+      {!isCurrent ? null : scope.children.length > 0 ? (
+        <div className="site-map__outline--category-tags">
+          {scope.children.map((childScope) => (
+            <SiteMapCategoryItem depth={depth + 1} key={childScope.category.id} scope={childScope} />
+          ))}
+        </div>
+      ) : (
+        scope.tags.map((tag) => (
+          <SiteMapTagItem key={`${scope.category.id}-${tag.id}`} scope={scope} tag={tag} />
+        ))
+      )}
+    </div>
+  );
+};
+
+type SiteMapTagItemProps = Readonly<{
+  scope: SiteData;
+  tag: TagWithRelationships;
+}>;
+
+// Only re-renders when this specific tag transitions between current/not-current.
+const SiteMapTagItem = ({ scope, tag }: SiteMapTagItemProps) => {
+  const { store } = useSiteData();
+  const openModal = useModalStore((state) => state.open);
+  const setTagSwipeFor = useNavigationStore((state) => state.setTagSwipeFor);
+  const isCurrent = useNavigationStore((state) => state.currentTagId === tag.id);
+
+  if (!isCurrent) {
+    return (
+      <div className="site-map__outline--tag">
+        <TagAhref category={scope.category} tag={tag} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="site-map__outline--tag">
+      <TagAhref category={scope.category} tag={tag}>
+        <div className="site-map__outline--tag-name-current">{tag.name}</div>
+      </TagAhref>
+      <div className="site-map__outline--tag-posts">
+        {tag.postIds.map((postId, tagPostsIdx) => {
+          const post = store.postMap[postId];
+          const { srcSet } = post.cdnFeaturedImage ?? {};
+          return (
+            <div key={`${scope.category.id}-${tag.id}-${post.id}`} className="site-map__outline--post">
+              <button
+                onClick={() => {
+                  setTagSwipeFor(tag.id, tagPostsIdx);
+                  openModal(post, tag);
+                }}
+              >
+                <div className="site-map__outline--post-inner">
+                  {srcSet ? (
+                    <img
+                      alt="Post thumbnail"
+                      className="site-map__outline--post-thumbnail"
+                      sizes="40px"
+                      srcSet={srcSet}
+                    />
+                  ) : null}
+                  <div className="site-map__outline--post-name">{post.title}</div>
+                  <div className="site-map__outline--post-indicator">►</div>
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
