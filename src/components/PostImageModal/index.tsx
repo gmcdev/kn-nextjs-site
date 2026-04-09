@@ -153,6 +153,10 @@ const PostImageModal = () => {
   }, [allTags, currentTagIndex, jumpToTag]);
 
   const handleTouchStart = useCallback((event: ReactTouchEvent) => {
+    if (event.touches.length > 1 || (window.visualViewport?.scale ?? 1) > 1) {
+      touchStartRef.current = null;
+      return;
+    }
     const touch = event.touches[0];
     touchStartRef.current = {
       atEnd: currentIndex === postIds.length - 1,
@@ -164,7 +168,7 @@ const PostImageModal = () => {
 
   const handleTouchMove = useCallback((event: ReactTouchEvent) => {
     const touchStart = touchStartRef.current;
-    if (!touchStart) {
+    if (!touchStart || event.touches.length > 1 || (window.visualViewport?.scale ?? 1) > 1) {
       return;
     }
     const touch = event.touches[0];
