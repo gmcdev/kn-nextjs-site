@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
@@ -18,8 +18,6 @@ type PostPageClientProps = Readonly<{
 
 const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
   const { siteScopes, store } = useSiteData();
-  const pageRef = useRef<HTMLDivElement>(null);
-
   const post = store.postBySlug[postSlug];
 
   const category = useMemo(() => {
@@ -53,11 +51,11 @@ const PostPageClient = ({ categorySlug, postSlug }: PostPageClientProps) => {
     return <div>Post not found</div>;
   }
 
-  useInteractiveFeatures(pageRef, store);
+  useInteractiveFeatures(store);
 
   return (
     <MediaListener>
-      <PageLayout pageRef={pageRef}>
+      <PageLayout>
         <Site categorySlug={categorySlug} post={post} scope={scope} />
       </PageLayout>
     </MediaListener>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import MediaListener from '@/components/MediaListener';
 import PageLayout from '@/components/PageLayout';
@@ -24,8 +24,6 @@ type CategoryPageClientProps = Readonly<{
 
 const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
   const { siteScopes, store } = useSiteData();
-  const pageRef = useRef<HTMLDivElement>(null);
-
   const category = store.categoryBySlug[categorySlug];
 
   const scope = useMemo(() => {
@@ -53,11 +51,11 @@ const CategoryPageClient = ({ categorySlug }: CategoryPageClientProps) => {
     return <div>Category not found</div>;
   }
 
-  useInteractiveFeatures(pageRef, store);
+  useInteractiveFeatures(store);
 
   return (
     <MediaListener>
-      <PageLayout pageRef={pageRef}>
+      <PageLayout>
         <Site categorySlug={categorySlug} scope={scope} />
       </PageLayout>
     </MediaListener>

@@ -14,23 +14,18 @@ import { useSiteData } from '../SiteDataProvider';
 
 import './style.scss';
 
-type SiteMapProps = Readonly<{
-  pageRef: React.RefObject<HTMLDivElement | null>;
-}>;
-
-const SiteMap = ({ pageRef }: SiteMapProps) => {
+const SiteMap = () => {
   const mediaSize = useMediaSize();
   const { siteScopes } = useSiteData();
   const [animClasses, setAnimClasses] = useState({ menu: '' });
   const isFixedRef = useRef(false);
 
   useEffect(() => {
-    const pageElement = pageRef.current;
-    if (!pageElement || mediaSize === 'small' || mediaSize === 'medium') {
+    if (mediaSize === 'small' || mediaSize === 'medium') {
       return;
     }
     const handleScroll = () => {
-      const scrollY = pageElement.scrollTop;
+      const scrollY = window.scrollY;
       if (scrollY > SCROLL_COLLAPSE_THRESHOLD && !isFixedRef.current) {
         isFixedRef.current = true;
         setAnimClasses({ menu: 'site-map__fixed' });
@@ -39,11 +34,11 @@ const SiteMap = ({ pageRef }: SiteMapProps) => {
         setAnimClasses({ menu: 'site-map__relative' });
       }
     };
-    pageElement.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      pageElement.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, [mediaSize, pageRef]);
+  }, [mediaSize]);
 
   if (mediaSize === 'small' || mediaSize === 'medium') {
     return null;

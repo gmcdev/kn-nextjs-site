@@ -24,6 +24,7 @@ const TagNavigation = ({ contentType, tag }: TagNavigationProps) => {
       <div className="tag-list__nav-inner">
         <button
           className={`tag-list__nav--left ${currentPostIdx === 0 ? 'tag-list__nav--inactive' : ''}`}
+          disabled={currentPostIdx === 0}
           onClick={() => handlePostClick(currentPostIdx - 1)}
         >
           <ArrowLeft />
@@ -43,6 +44,7 @@ const TagNavigation = ({ contentType, tag }: TagNavigationProps) => {
           className={`tag-list__nav--right ${
             currentPostIdx === tag.postIds.length - 1 ? 'tag-list__nav--inactive' : ''
           }`}
+          disabled={currentPostIdx === tag.postIds.length - 1}
           onClick={() => handlePostClick(currentPostIdx + 1)}
         >
           <ArrowRight />

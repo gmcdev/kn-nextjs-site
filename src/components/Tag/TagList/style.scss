@@ -13,7 +13,7 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    margin: var(--spacing-3) 0 0;
+    margin: var(--spacing-1) 0 var(--spacing-1);
     transform-origin: 0px 0px;
     width: 100%;
 
@@ -122,6 +122,27 @@
           margin: unset;
         }
       }
+    }
+  }
+
+  &__video {
+    &-posts {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      touch-action: pan-x pan-y;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    &-post {
+      flex: 0 0 auto;
+      scroll-snap-align: center;
+      width: 100%;
     }
   }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import SpeakerIcon from '@/icons/SpeakerIcon';
 import { getRootCategory, orderTopCategories } from '@/lib/store';
@@ -16,10 +16,9 @@ import './style.scss';
 
 type HeaderProps = Readonly<{
   onMenuOpen: () => void;
-  pageRef: RefObject<HTMLDivElement | null>;
 }>;
 
-const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
+const Header = ({ onMenuOpen }: HeaderProps) => {
   const { siteScopes, store } = useSiteData();
   const currentCategoryId = useNavigationStore((state) => state.currentCategoryId);
   const isCollapsed = useAudioStore((state) => state.collapsed);
@@ -64,10 +63,9 @@ const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
   });
 
   useEffect(() => {
-    const pageRefElement = pageRef.current;
     const isCollapsedRef = { current: false };
     const handleScroll = () => {
-      const scrollY = pageRefElement?.scrollTop ?? 0;
+      const scrollY = window.scrollY;
       if (!isCollapsedRef.current && scrollY > SCROLL_COLLAPSE_THRESHOLD) {
         isCollapsedRef.current = true;
         setAnimClasses({
@@ -85,11 +83,11 @@ const Header = ({ onMenuOpen, pageRef }: HeaderProps) => {
         });
       }
     };
-    pageRefElement?.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      pageRefElement?.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, [pageRef]);
+  }, []);
 
   return (
     <header className={`header ${animClasses.header}`}>

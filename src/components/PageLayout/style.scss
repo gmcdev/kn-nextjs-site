@@ -7,12 +7,11 @@ body {
   background-color: black;
   display: grid;
   grid-template-rows: auto 1fr;
-  height: 100%;
+  min-height: 100svh;
 
   &__main {
     display: grid;
     grid-template-columns: minmax(0, min(15%, 200px)) 1fr;
-    overflow: hidden;
 
     @media screen and (max-width: 968px) {
       grid-template-columns: 1fr;
@@ -31,10 +30,6 @@ body {
       rgba(0, 0, 0, 0.2) 25%,
       rgba(0, 0, 0, 0) 100%
     );
-  }
-
-  &__page {
-    overflow-x: hidden;
   }
 
   &__content {

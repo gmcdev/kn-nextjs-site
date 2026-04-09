@@ -3,9 +3,10 @@
   border-right: 2px solid var(--color-audio-border);
   color: var(--color-site-map-text);
   font-family: var(--fontFamily-sans);
-  height: 100%;
+  height: 100svh;
   overflow-y: auto;
   position: sticky;
+  top: 145px;
   z-index: 5;
 
   // Hide scrollbar but keep scrolling functionality
