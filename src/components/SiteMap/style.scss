@@ -3,7 +3,7 @@
   border-right: 2px solid var(--color-audio-border);
   color: var(--color-site-map-text);
   font-family: var(--fontFamily-sans);
-  height: 100svh;
+  height: calc(100svh - 145px);
   overflow-y: auto;
   position: sticky;
   top: 145px;
@@ -22,9 +22,11 @@
   }
   @keyframes fixed {
     from {
+      height: calc(100svh - 145px);
       top: 145px;
     }
     to {
+      height: calc(100svh - 30px);
       top: 30px;
     }
   }
@@ -34,9 +36,11 @@
   }
   @keyframes relative {
     from {
+      height: calc(100svh - 30px);
       top: 30px;
     }
     to {
+      height: calc(100svh - 145px);
       top: 145px;
     }
   }
